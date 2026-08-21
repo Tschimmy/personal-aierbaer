@@ -37,9 +37,12 @@ Requirements: macOS, [pi](https://github.com/earendil-works) CLI, a GitHub
 Copilot subscription, Rust + Node.
 
 ```bash
-make dev      # run in development
-make deploy   # build .app → /Applications, register the aierbaer:// scheme
+make dev           # run in development
+make deploy-local  # build .app → /Applications, register the aierbaer:// scheme
 ```
+
+Download prebuilt releases (`.dmg`) from the repo's
+**[Releases](https://github.com/Tschimmy/personal-aierbaer/releases)** page.
 
 On first launch the onboarding wizard walks you through: pi agent → skills →
 GitHub Copilot login → model + test → repository → ClickUp.
@@ -76,11 +79,18 @@ to talk to the app for you.
 ## Versioning
 
 Semantic versioning. Release notes live in the app (Settings → Release notes),
-in **[CHANGELOG.md](CHANGELOG.md)**, and `src/lib/releaseNotes.ts`. Bump with:
+in **[CHANGELOG.md](CHANGELOG.md)**, and `src/lib/releaseNotes.ts`. To cut a
+release — add the entry to `releaseNotes.ts` + `CHANGELOG.md`, then:
 
 ```bash
-make new-version V=x.y.z
+make version               # a pi agent suggests the next x.y.z from changes since the last release
+make deploy                # default: the pi agent picks the version, then bump/commit/tag/push
+make deploy V=x.y.z        # explicit version
+make deploy BUMP=minor     # patch | minor | major from current
 ```
+
+This bumps the version, commits, tags, and pushes. Pushing the `v*` tag triggers
+a GitHub Actions build that publishes the `.dmg` to the Releases page.
 
 ## More docs
 

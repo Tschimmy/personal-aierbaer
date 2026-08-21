@@ -1,3 +1,4 @@
+import { open as openUrl } from "@tauri-apps/plugin-shell";
 import { APP_VERSION } from "../lib/releaseNotes";
 
 /** User-facing explainer: what the app does, and how to go beyond it via the
@@ -87,7 +88,15 @@ export function Help({ onClose }: { onClose: () => void }) {
             </ul>
           </section>
 
-          <p className="help-foot">Personal Aierbaer v{APP_VERSION} · full API docs in the repo's API.md</p>
+          <p className="help-foot">
+            Personal Aierbaer v{APP_VERSION} · full API docs on{" "}
+            <button
+              className="inline-link"
+              onClick={() => openUrl("https://github.com/Tschimmy/personal-aierbaer/blob/main/API.md")}
+            >
+              GitHub ↗
+            </button>
+          </p>
         </div>
       </div>
     </div>
