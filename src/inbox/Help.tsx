@@ -1,9 +1,36 @@
+import { useEffect, useRef } from "react";
 import { open as openUrl } from "@tauri-apps/plugin-shell";
 import { APP_VERSION } from "../lib/releaseNotes";
 
 /** User-facing explainer: what the app does, and how to go beyond it via the
  *  local API, the aierbaer-api skill, other agents, and your own dashboard. */
 export function Help({ onClose }: { onClose: () => void }) {
+  const bodyRef = useRef<HTMLDivElement>(null);
+
+  // Own the keys while open (capture) so j/k scroll the modal, not the inbox.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        onClose();
+      } else if (e.key === "j" || e.key === "ArrowDown") {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        bodyRef.current?.scrollBy({ top: 90 });
+      } else if (e.key === "k" || e.key === "ArrowUp") {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        bodyRef.current?.scrollBy({ top: -90 });
+      } else if (e.key === "g") {
+        bodyRef.current?.scrollTo({ top: 0 });
+      } else if (e.key === "G") {
+        bodyRef.current?.scrollTo({ top: bodyRef.current.scrollHeight });
+      }
+    };
+    window.addEventListener("keydown", onKey, true);
+    return () => window.removeEventListener("keydown", onKey, true);
+  }, [onClose]);
   return (
     <div className="prefs-backdrop" onClick={onClose}>
       <div className="prefs-panel help-panel" onClick={(e) => e.stopPropagation()}>
@@ -12,7 +39,7 @@ export function Help({ onClose }: { onClose: () => void }) {
           <button className="prefs-close" onClick={onClose}>✕</button>
         </header>
 
-        <div className="help-body">
+        <div className="help-body" ref={bodyRef}>
           <section>
             <h3>The idea</h3>
             <p>

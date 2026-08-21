@@ -169,7 +169,7 @@ export function Inbox({
       if (canSolve) h.push({ keys: ["s"], label: "re-solve" });
       h.push({ keys: ["r"], label: "set solution" });
       if (selected && resolvedMap.has(selected.id)) h.push({ keys: ["d"], label: "delete solution" });
-      h.push({ keys: ["⌘", "R"], label: "refresh" }, { keys: ["⌘", ","], label: "settings" });
+      h.push({ keys: ["?"], label: "help" }, { keys: ["⌘", "R"], label: "refresh" }, { keys: ["⌘", ","], label: "settings" });
       return h;
     }
     const h: Hint[] = [];
@@ -182,6 +182,7 @@ export function Inbox({
     h.push(
       { keys: ["⌘", "F"], label: "search" },
       { keys: ["⌘", "U"], label: hideResolved ? "show resolved" : "hide resolved" },
+      { keys: ["?"], label: "help" },
       { keys: ["⌘", "R"], label: "refresh" },
       { keys: ["⌘", ","], label: "settings" },
     );
@@ -229,7 +230,7 @@ export function Inbox({
         }
         return;
       }
-      if (e.metaKey && e.shiftKey && (e.key === "?" || e.key === "/")) {
+      if (e.key === "?" && !isTyping()) {
         e.preventDefault();
         setHelpOpen((v) => !v);
         return;
@@ -346,7 +347,7 @@ export function Inbox({
       <header className="titlebar" data-tauri-drag-region>
         <span className="brand">🐻 Personal Aierbaer</span>
         <div className="actions">
-          <button onClick={() => setHelpOpen(true)} title="Help (⌘⇧?)">
+          <button onClick={() => setHelpOpen(true)} title="Help (?)">
             <IconHelp />
           </button>
           {skillOutdated && (

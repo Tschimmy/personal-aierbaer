@@ -155,7 +155,17 @@ export function Settings({ initial, onSave, onCancel }: Props) {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.metaKey && (e.key === "s" || e.key === "S")) { e.preventDefault(); doSave(); }
+      if (e.metaKey && (e.key === "s" || e.key === "S")) { e.preventDefault(); doSave(); return; }
+      const el = document.activeElement;
+      if (el instanceof HTMLElement && ["INPUT", "TEXTAREA", "SELECT"].includes(el.tagName)) return;
+      const idx = SECTIONS.findIndex((s) => s.id === section);
+      if (e.key === "j" || e.key === "ArrowDown") {
+        e.preventDefault();
+        setSection(SECTIONS[Math.min(SECTIONS.length - 1, idx + 1)].id);
+      } else if (e.key === "k" || e.key === "ArrowUp") {
+        e.preventDefault();
+        setSection(SECTIONS[Math.max(0, idx - 1)].id);
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -406,7 +416,8 @@ export function Settings({ initial, onSave, onCancel }: Props) {
         </div>
 
         <StatusBar
-          hints={[{ keys: ["esc"], label: "close" }, { keys: ["⌘", "S"], label: "save" }]}
+          hints={[{ keys: ["j", "k"], label: "sections" }, { keys: ["esc"], label: "close" }, { keys: ["⌘", "S"], label: "save" }]}
+          right={<button className="prefs-save" disabled={!valid} onClick={doSave}>Save</button>}
         />
       </div>
     </div>
