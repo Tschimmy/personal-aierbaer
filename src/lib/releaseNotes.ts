@@ -1,0 +1,70 @@
+export interface Release {
+  version: string;
+  date: string;
+  sections: { heading: string; items: string[] }[];
+}
+
+/** Newest first. The top entry's version is the current app version. */
+export const RELEASES: Release[] = [
+  {
+    version: "0.2.0",
+    date: "2026-08-21",
+    sections: [
+      {
+        heading: "Onboarding",
+        items: [
+          "Guided wizard: pi agent, skills, GitHub Copilot, model + test, repository, ClickUp.",
+          "One-button, background install for pi and the skills, with auto re-check.",
+          "In-app GitHub Copilot device login (no terminal) with code + browser handoff.",
+          "Model picker from your allowed Copilot models, plus a 'Test pi agent' step.",
+          "ClickUp step auto-resolves the workspace and lets you pick your owner team.",
+        ],
+      },
+      {
+        heading: "Inbox & solving",
+        items: [
+          "Mail-style split view: ticket list on top, report below, with a draggable divider.",
+          "Runs the pi agent inside your Eversports repo using the clickup-aierbaer-solve skill.",
+          "Reports stored locally in a configurable folder (default ~/Documents/Personal Aierbaer/Reports).",
+          "New unsolved tickets auto-start solving, hands-free.",
+          "Reports render as a form of section cards (Problem, Type, Root cause, Options, Verdict).",
+        ],
+      },
+      {
+        heading: "Resolutions & memory",
+        items: [
+          "Record the actual fix: pick Option A/B/Other + notes; stored as a Resolution section.",
+          "Resolved tickets show a green marker + chosen option; the skill reuses prior resolutions.",
+          "Set, edit, and remove resolutions; pre-filled when editing.",
+        ],
+      },
+      {
+        heading: "Keyboard & UI",
+        items: [
+          "Vim + arrow navigation, section stepping in the report, number-key resolution picker.",
+          "Shortcuts: s solve, r set solution, d delete, Enter open report, ⌘F search, ⌘⇧H hide resolved, ⌘, settings.",
+          "Context-aware footer legend, dark/light theme toggle, sectioned Settings.",
+          "Hide-resolved toggle, persisted across launches.",
+        ],
+      },
+      {
+        heading: "Integrations",
+        items: [
+          "Local HTTP API (configurable port + personal token) to drive the inbox, reports, and resolutions.",
+          "aierbaer-api skill documenting the API for any coding agent, with per-shell env snippets.",
+          "Deep links: aierbaer://open/<id> and aierbaer://solve/<id>.",
+          "Skill install/update surfaced in the wizard and Settings, with a top-bar update indicator.",
+        ],
+      },
+    ],
+  },
+  {
+    version: "0.1.0",
+    date: "2026-08-21",
+    sections: [
+      { heading: "Initial", items: ["Tauri + React scaffold, native window and bear icon, ClickUp fetch."] },
+    ],
+  },
+];
+
+export const APP_VERSION = RELEASES[0].version;

@@ -1,0 +1,10 @@
+node_modules
+dist
+.DS_Store
+
+# Rust / Tauri
+src-tauri/target
+src-tauri/gen
+
+# generated icons (regenerate via: npm run tauri icon icon-src.png)
+# keep source, ignore nothing else here

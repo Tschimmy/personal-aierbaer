@@ -1,0 +1,41 @@
+# Changelog
+
+All notable changes to Personal Aierbaer. Follows [Semantic Versioning](https://semver.org).
+The in-app **Settings → Release notes** mirrors this file (`src/lib/releaseNotes.ts`).
+
+## [0.2.0] — 2026-08-21
+
+First feature-complete release.
+
+### Onboarding
+- Guided wizard: pi agent, skills, GitHub Copilot, model + test, repository, ClickUp.
+- One-button background install for pi and the skills with auto re-check.
+- In-app GitHub Copilot device login (no terminal).
+- Model picker from allowed Copilot models + a "Test pi agent" step.
+- ClickUp step auto-resolves the workspace and picks your owner team.
+
+### Inbox & solving
+- Mail-style split view with a draggable divider.
+- Runs the pi agent inside the Eversports repo using the clickup-aierbaer-solve skill.
+- Reports stored locally in a configurable folder.
+- New unsolved tickets auto-start solving.
+- Reports render as a form of section cards.
+
+### Resolutions & memory
+- Record the actual fix (Option A/B/Other + notes) as a Resolution section.
+- Resolved tickets show a green marker + chosen option; the skill reuses prior resolutions.
+- Set, edit, and remove resolutions.
+
+### Keyboard & UI
+- Vim + arrow navigation, section stepping, number-key resolution picker.
+- Shortcuts: s solve, r set solution, d delete, Enter open report, ⌘F search, ⌘⇧H hide resolved, ⌘, settings.
+- Context-aware footer legend, dark/light theme, sectioned Settings, persisted hide-resolved.
+
+### Integrations
+- Local HTTP API (configurable port + personal token).
+- aierbaer-api skill documenting the API, with per-shell env snippets.
+- Deep links: `aierbaer://open/<id>` and `aierbaer://solve/<id>`.
+- Skill install/update in the wizard and Settings + top-bar update indicator.
+
+## [0.1.0] — 2026-08-21
+- Tauri + React scaffold, native window and bear icon, ClickUp fetch.

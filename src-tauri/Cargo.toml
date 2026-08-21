@@ -1,0 +1,29 @@
+[package]
+name = "personal-aierbaer"
+version = "0.2.0"
+description = "Personal Aierbaer — local-first ClickUp ticket inbox powered by the pi agent"
+authors = ["fkimmel"]
+edition = "2021"
+
+[lib]
+name = "personal_aierbaer_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = ["tray-icon"] }
+tauri-plugin-shell = "2"
+tauri-plugin-deep-link = "2"
+tauri-plugin-single-instance = { version = "2", features = ["deep-link"] }
+tauri-plugin-dialog = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["process", "rt-multi-thread", "macros", "io-util", "net"] }
+reqwest = { version = "0.12", features = ["json", "rustls-tls"], default-features = false }
+axum = "0.7"
+tower-http = { version = "0.6", features = ["cors"] }
+rand = "0.8"
+anyhow = "1"
+chrono = { version = "0.4", features = ["clock"] }
