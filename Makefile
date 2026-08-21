@@ -51,7 +51,7 @@ deploy:
 	  esac; \
 	fi; \
 	echo "$$VER" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$$' || { echo "bad version: $$VER"; exit 1; }; \
-	grep -q "\"version\": \"$$VER\"" src/lib/releaseNotes.ts || { echo "!! Add a v$$VER entry to src/lib/releaseNotes.ts and CHANGELOG.md first"; exit 1; }; \
+	grep -q "version: \"$$VER\"" src/lib/releaseNotes.ts || { echo "!! Add a v$$VER entry to src/lib/releaseNotes.ts and CHANGELOG.md first"; exit 1; }; \
 	echo "Releasing v$$VER"; \
 	sed -i '' "s/\"version\": \"[0-9]*\.[0-9]*\.[0-9]*\"/\"version\": \"$$VER\"/" package.json src-tauri/tauri.conf.json; \
 	sed -i '' "s/^version = \"[0-9]*\.[0-9]*\.[0-9]*\"/version = \"$$VER\"/" src-tauri/Cargo.toml; \

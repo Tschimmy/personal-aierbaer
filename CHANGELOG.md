@@ -3,6 +3,17 @@
 All notable changes to Personal Aierbaer. Follows [Semantic Versioning](https://semver.org).
 The in-app **Settings → Release notes** mirrors this file (`src/lib/releaseNotes.ts`).
 
+## [0.3.0] — 2026-08-21
+
+### Updates & distribution
+- In-app update check: detects a newer GitHub release on launch and installs it to /Applications.
+- GitHub Actions release workflow builds and publishes the `.dmg` on each version tag.
+- `make deploy` picks the version via a pi agent, bumps, tags, and pushes; `make deploy-local` installs locally.
+
+### Polish
+- Help panel links to the API docs on GitHub.
+- ⌘C copies the selected ticket ID; Help button explains the whole workflow.
+
 ## [0.2.0] — 2026-08-21
 
 First feature-complete release.
