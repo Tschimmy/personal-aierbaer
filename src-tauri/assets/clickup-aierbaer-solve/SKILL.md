@@ -1,6 +1,6 @@
 ---
 name: clickup-aierbaer-solve
-version: 1.1.0
+version: 1.2.0
 description: "Analyze a ClickUp task/issue and generate a markdown report suggesting possible solutions. Reads a pre-fetched task context file (description, comments, metadata) provided by the caller, reasons about root cause, and proposes concrete fixes. Use when user says \"solve\", \"clickup solve\", \"suggest solution\", \"analyze issue\", \"fix this ticket\", or wants automated solution proposals for a ClickUp task."
 allowed-tools: Bash(curl:*), Bash(jq:*), Bash(rg:*), Bash(grep:*), Bash(find:*), Bash(cat:*), Bash(mysql:*), Read, Write
 context: current
@@ -54,13 +54,7 @@ If a matching report exists:
 - If it only has proposals (no Resolution yet), reference it under "Related" and
   build on it instead of starting over.
 
-Also check the zettelkasten for related root-cause patterns when available:
-
-```bash
-rg -li "<keyword>" "/Users/fkimmel/Documents/workspace/notes/03 Resources/Zettelkasten/"
-```
-
-Even partial matches are valuable — same facility, same module, similar symptom.
+Even partial matches are valuable — same area, same module, similar symptom.
 Mention them under "Related" in the report.
 
 ### 3. Understand the Problem
