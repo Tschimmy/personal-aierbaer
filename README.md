@@ -78,19 +78,19 @@ to talk to the app for you.
 
 ## Versioning
 
-Semantic versioning. Release notes live in the app (Settings → Release notes),
-in **[CHANGELOG.md](CHANGELOG.md)**, and `src/lib/releaseNotes.ts`. To cut a
-release — add the entry to `releaseNotes.ts` + `CHANGELOG.md`, then:
+Semantic versioning. Release notes are **written by a pi agent** from the changes
+since the last tag, and live in the app (Settings → Release notes), in
+**[CHANGELOG.md](CHANGELOG.md)**, and `src/lib/releaseNotes.ts`. To cut a release:
 
 ```bash
 make version               # a pi agent suggests the next x.y.z from changes since the last release
-make deploy                # default: the pi agent picks the version, then bump/commit/tag/push
+make deploy                # default: pi picks the version + writes notes, then bump/commit/tag/push
 make deploy V=x.y.z        # explicit version
 make deploy BUMP=minor     # patch | minor | major from current
 ```
 
-This bumps the version, commits, tags, and pushes. Pushing the `v*` tag triggers
-a GitHub Actions build that publishes the `.dmg` to the Releases page.
+Pushing the `v*` tag triggers a GitHub Actions build that publishes the `.dmg`
+to the Releases page.
 
 ## More docs
 

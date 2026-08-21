@@ -28,11 +28,11 @@ deploy-local:
 version:
 	@./scripts/suggest-version.sh
 
-# Release: bump the version, commit, tag, and push. Pushing the v<x.y.z> tag
-# triggers the GitHub Actions release workflow, which builds the .dmg and
-# publishes it to the repo's Releases page for others to download.
-# Add the matching entry to src/lib/releaseNotes.ts + CHANGELOG.md first.
-# Usage: make deploy               (default: a pi agent picks from the changes)
+# Release: pick a version, let a pi agent write the release notes from the
+# changes, bump the version, commit, tag, and push. Pushing the v<x.y.z> tag
+# triggers the GitHub Actions workflow that builds the .dmg and publishes it to
+# the repo's Releases page for others to download.
+# Usage: make deploy               (default: a pi agent picks the version too)
 #        make deploy V=0.3.0        (explicit version)
 #        make deploy BUMP=minor     (patch | minor | major from current)
 deploy:
@@ -51,11 +51,11 @@ deploy:
 	  esac; \
 	fi; \
 	echo "$$VER" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$$' || { echo "bad version: $$VER"; exit 1; }; \
-	grep -q "version: \"$$VER\"" src/lib/releaseNotes.ts || { echo "!! Add a v$$VER entry to src/lib/releaseNotes.ts and CHANGELOG.md first"; exit 1; }; \
+	./scripts/release-notes.sh "$$VER"; \
 	echo "Releasing v$$VER"; \
 	sed -i '' "s/\"version\": \"[0-9]*\.[0-9]*\.[0-9]*\"/\"version\": \"$$VER\"/" package.json src-tauri/tauri.conf.json; \
 	sed -i '' "s/^version = \"[0-9]*\.[0-9]*\.[0-9]*\"/version = \"$$VER\"/" src-tauri/Cargo.toml; \
 	git -c commit.gpgsign=false commit -am "release: v$$VER"; \
-	git tag "v$$VER"; \
+	git tag -a "v$$VER" -m "v$$VER"; \
 	git push origin main --follow-tags; \
 	echo "Pushed v$$VER — GitHub Actions is building the release; the .dmg will appear under Releases."
