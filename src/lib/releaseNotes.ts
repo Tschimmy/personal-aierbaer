@@ -7,6 +7,27 @@ export interface Release {
 /** Newest first. The top entry's version is the current app version. */
 export const RELEASES: Release[] = [
   {
+    version: "0.4.0",
+    date: "2026-08-21",
+    sections: [
+      {
+        heading: "Inbox & performance",
+        items: [
+          "ClickUp tickets are now cached for instant loads, with a manual refresh to pull the latest.",
+          "Native macOS notifications keep you posted on inbox and solve activity.",
+          "New Feedback section in the report view.",
+        ],
+      },
+      {
+        heading: "Navigation & help",
+        items: [
+          "Settings now support j/k navigation with a Save button pinned to the bottom.",
+          "Bigger Help panel with j/k scrolling for easier reading.",
+        ],
+      },
+    ],
+  },
+  {
     version: "0.3.1",
     date: "2026-08-21",
     sections: [

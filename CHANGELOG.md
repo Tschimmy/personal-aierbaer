@@ -3,6 +3,17 @@
 All notable changes to Personal Aierbaer. Follows [Semantic Versioning](https://semver.org).
 The in-app **Settings → Release notes** mirrors this file (`src/lib/releaseNotes.ts`).
 
+## [0.4.0] — 2026-08-21
+
+### Inbox & performance
+- ClickUp tickets are now cached for instant loads, with a manual refresh to pull the latest.
+- Native macOS notifications keep you posted on inbox and solve activity.
+- New Feedback section in the report view.
+
+### Navigation & help
+- Settings now support j/k navigation with a Save button pinned to the bottom.
+- Bigger Help panel with j/k scrolling for easier reading.
+
 ## [0.3.1] — 2026-08-21
 
 ### Release process
