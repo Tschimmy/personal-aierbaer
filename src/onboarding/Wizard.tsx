@@ -18,6 +18,7 @@ import {
   installSkill,
   fetchTeams,
   fetchOwnerOptions,
+  saveClickupCache,
   clickupTokenUrl,
   saveConfig,
   markOnboarded,
@@ -520,6 +521,7 @@ function ClickUpStep({ onBack, onDone }: { onBack: () => void; onDone: (c: Click
           setTeamId(tid);
           const opts = await fetchOwnerOptions(token, tid, DEFAULT_OWNER_FIELD_ID);
           setOwners(opts);
+          saveClickupCache({ token, teams: t, owners: opts });
           const def = opts.find((o) => o.value === DEFAULT_OWNER_VALUE) ?? opts[0];
           if (def) setOwnerValue(def.value);
         }

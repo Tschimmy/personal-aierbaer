@@ -780,3 +780,27 @@ body {
 .update-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 .update-dismiss { background: transparent; border: none; color: var(--muted); cursor: pointer; font-size: 13px; }
 .update-dismiss:hover { color: var(--text); }
+
+/* Refresh-from-ClickUp button (cached data) */
+.cache-refresh {
+  align-self: flex-start;
+  background: transparent; border: 1px solid var(--line); color: var(--muted);
+  border-radius: 8px; padding: 7px 12px; font-size: 12.5px; cursor: pointer;
+}
+.cache-refresh:hover { border-color: var(--accent); color: var(--accent); }
+.cache-refresh:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Notification toggle rows */
+.notify-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.notify-title { font-size: 14px; }
+.notify-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.switch-btn { background: transparent; border: none; cursor: pointer; padding: 0; flex: none; }
+.switch-btn .switch { width: 40px; height: 22px; border-radius: 12px; background: var(--line); position: relative; display: block; transition: background 0.15s; }
+.switch-btn .knob { position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%; background: var(--muted); transition: transform 0.15s, background 0.15s; }
+.switch-btn.on .switch { background: var(--accent); }
+.switch-btn.on .knob { transform: translateX(18px); background: #14100c; }
+
+/* About & Feedback */
+.about-me { display: flex; align-items: center; gap: 16px; margin-bottom: 4px; }
+.about-avatar { width: 72px; height: 72px; border-radius: 50%; border: 1px solid var(--line); }
+.about-name { font-size: 16px; font-weight: 600; margin-bottom: 4px; }

@@ -101,6 +101,44 @@ export function saveHideResolved(v: boolean) {
   localStorage.setItem("aierbaer.hideResolved", v ? "1" : "0");
 }
 
+// --- Notifications ---
+export function loadNotifyTickets(): boolean {
+  return localStorage.getItem("aierbaer.notifyTickets") !== "0";
+}
+export function saveNotifyTickets(v: boolean) {
+  localStorage.setItem("aierbaer.notifyTickets", v ? "1" : "0");
+}
+export function loadNotifySolutions(): boolean {
+  return localStorage.getItem("aierbaer.notifySolutions") !== "0";
+}
+export function saveNotifySolutions(v: boolean) {
+  localStorage.setItem("aierbaer.notifySolutions", v ? "1" : "0");
+}
+
+/** Known ticket ids (to detect new arrivals). null = never seeded yet. */
+export function loadKnownTickets(): string[] | null {
+  const raw = localStorage.getItem("aierbaer.knownTickets");
+  if (raw === null) return null;
+  try {
+    return JSON.parse(raw) as string[];
+  } catch {
+    return [];
+  }
+}
+export function saveKnownTickets(ids: string[]) {
+  localStorage.setItem("aierbaer.knownTickets", JSON.stringify(ids));
+}
+
+/** Send a native notification (requests permission on first use). */
+export async function notify(title: string, body: string): Promise<void> {
+  const { isPermissionGranted, requestPermission, sendNotification } = await import(
+    "@tauri-apps/plugin-notification"
+  );
+  let granted = await isPermissionGranted();
+  if (!granted) granted = (await requestPermission()) === "granted";
+  if (granted) sendNotification({ title, body });
+}
+
 export interface RuntimeConfig {
   token: string;
   team_id: string;
@@ -302,6 +340,27 @@ export function fetchOwnerOptions(
   fieldId: string,
 ): Promise<OwnerOption[]> {
   return invoke("fetch_owner_options", { token, teamId, fieldId });
+}
+
+interface ClickupCache {
+  token: string;
+  teams: Team[];
+  owners: OwnerOption[];
+}
+
+/** Cached ClickUp teams + owner options so Settings opens instantly. */
+export function loadClickupCache(): ClickupCache | null {
+  const raw = localStorage.getItem("aierbaer.clickupCache");
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as ClickupCache;
+  } catch {
+    return null;
+  }
+}
+
+export function saveClickupCache(c: ClickupCache) {
+  localStorage.setItem("aierbaer.clickupCache", JSON.stringify(c));
 }
 
 export function onboardingDone(): boolean {

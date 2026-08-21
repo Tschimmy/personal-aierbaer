@@ -12,6 +12,11 @@ import {
   currentRuntimeConfig,
   listReportsMeta,
   checkSkill,
+  notify,
+  loadNotifyTickets,
+  loadNotifySolutions,
+  loadKnownTickets,
+  saveKnownTickets,
   onboardingDone,
   type ClickUpTask,
   type ClickUpConfig,
@@ -34,6 +39,8 @@ export function App() {
   const [reportsLoaded, setReportsLoaded] = useState(false);
   const [skillOutdated, setSkillOutdated] = useState(false);
   const attempted = useRef<Set<string>>(new Set());
+  const tasksRef = useRef<ClickUpTask[]>([]);
+  tasksRef.current = tasks;
 
   const refreshReportIds = useCallback(async () => {
     try {
@@ -110,6 +117,31 @@ export function App() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tasks, reportIds, reportsLoaded, cfg]);
+
+  // Notify on newly-arrived tickets (seeds silently on first run).
+  useEffect(() => {
+    if (!cfg) return;
+    const known = loadKnownTickets();
+    const ids = tasks.map((t) => t.id);
+    if (known && loadNotifyTickets()) {
+      tasks.filter((t) => !known.includes(t.id)).forEach((t) => notify("New ticket", t.name));
+    }
+    if (tasks.length || known) saveKnownTickets(ids);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tasks]);
+
+  // Notify when a solve finishes and a report is ready.
+  useEffect(() => {
+    const un = listen<{ taskId: string; ok: boolean }>("pi-done", (e) => {
+      if (e.payload.ok && loadNotifySolutions()) {
+        const t = tasksRef.current.find((x) => x.id === e.payload.taskId);
+        notify("Solution ready", t ? t.name : e.payload.taskId);
+      }
+    });
+    return () => {
+      un.then((f) => f());
+    };
+  }, []);
 
   // Deep link aierbaer://solve/<id> → kick off a solve for that ticket.
   useEffect(() => {

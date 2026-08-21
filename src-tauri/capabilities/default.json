@@ -9,6 +9,7 @@
     "core:window:allow-start-dragging",
     "shell:allow-open",
     "dialog:default",
+    "notification:default",
     "deep-link:default"
   ]
 }

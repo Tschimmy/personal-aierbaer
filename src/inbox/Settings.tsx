@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
+import { open as openUrl } from "@tauri-apps/plugin-shell";
 import {
   fetchTeams,
   fetchOwnerOptions,
@@ -12,6 +13,13 @@ import {
   getApiSettings,
   setApiPort,
   regenerateApiToken,
+  loadClickupCache,
+  saveClickupCache,
+  loadNotifyTickets,
+  saveNotifyTickets,
+  loadNotifySolutions,
+  saveNotifySolutions,
+  notify,
   DEFAULT_OWNER_FIELD_ID,
   type ClickUpConfig,
   type Team,
@@ -28,14 +36,16 @@ interface Props {
   onCancel?: () => void;
 }
 
-type Section = "clickup" | "solving" | "skill" | "api" | "about";
+type Section = "clickup" | "solving" | "skill" | "api" | "notifications" | "about" | "aboutme";
 
 const SECTIONS: { id: Section; label: string }[] = [
   { id: "clickup", label: "ClickUp" },
   { id: "solving", label: "Repository & Reports" },
   { id: "skill", label: "Skills" },
+  { id: "notifications", label: "Notifications" },
   { id: "api", label: "Local API" },
   { id: "about", label: "Release notes" },
+  { id: "aboutme", label: "Feedback" },
 ];
 
 export function Settings({ initial, onSave, onCancel }: Props) {
@@ -55,6 +65,8 @@ export function Settings({ initial, onSave, onCancel }: Props) {
   const [apiSettings, setApiSettings] = useState<ApiSettings | null>(null);
   const [portInput, setPortInput] = useState("");
   const [copied, setCopied] = useState("");
+  const [notifyTickets, setNotifyTickets] = useState(loadNotifyTickets());
+  const [notifySolutions, setNotifySolutions] = useState(loadNotifySolutions());
 
   const copy = async (text: string, key: string) => {
     try {
@@ -68,7 +80,14 @@ export function Settings({ initial, onSave, onCancel }: Props) {
 
   const refreshSkill = () => checkSkill().then(setSkill);
   useEffect(() => {
-    if (token) loadTeams();
+    // Use the cached ClickUp teams/owners for an instant open; refetch on demand.
+    const cache = loadClickupCache();
+    if (cache && cache.token === token) {
+      setTeams(cache.teams);
+      setOwners(cache.owners);
+    } else if (token) {
+      loadTeams();
+    }
     refreshSkill();
     getApiSettings().then((s) => {
       setApiSettings(s);
@@ -84,10 +103,13 @@ export function Settings({ initial, onSave, onCancel }: Props) {
       .then(async (t) => {
         setTeams(t);
         const tid = t.length === 1 ? t[0].id : teamId || (t[0]?.id ?? "");
+        let opts: OwnerOption[] = [];
         if (tid) {
           setTeamId(tid);
-          setOwners(await fetchOwnerOptions(token, tid, fieldId));
+          opts = await fetchOwnerOptions(token, tid, fieldId);
+          setOwners(opts);
         }
+        saveClickupCache({ token, teams: t, owners: opts });
       })
       .catch((e) => setError(String(e)))
       .finally(() => setLoading(false));
@@ -111,6 +133,19 @@ export function Settings({ initial, onSave, onCancel }: Props) {
     setApiSettings(await setApiPort(p));
   };
   const regenToken = async () => setApiSettings(await regenerateApiToken());
+
+  const toggleTickets = () => {
+    const v = !notifyTickets;
+    setNotifyTickets(v);
+    saveNotifyTickets(v);
+    if (v) notify("Notifications on", "You'll be notified when new tickets arrive.");
+  };
+  const toggleSolutions = () => {
+    const v = !notifySolutions;
+    setNotifySolutions(v);
+    saveNotifySolutions(v);
+    if (v) notify("Notifications on", "You'll be notified when solutions are ready.");
+  };
 
   const valid = token && teamId && fieldId;
   const doSave = () => {
@@ -180,6 +215,11 @@ export function Settings({ initial, onSave, onCancel }: Props) {
                     </select>
                   </label>
                 )}
+                {teams.length > 0 && (
+                  <button className="cache-refresh" disabled={loading} onClick={loadTeams}>
+                    {loading ? "Refreshing…" : "↻ Refresh teams from ClickUp"}
+                  </button>
+                )}
                 <div className="prefs-actions">
                   <button className="primary" disabled={!valid} onClick={doSave}>Save</button>
                 </div>
@@ -229,6 +269,31 @@ export function Settings({ initial, onSave, onCancel }: Props) {
                     <button className="fix" disabled={skillBusy} onClick={updateSkill}>{skillBusy ? "Installing…" : "Install"}</button>
                   </div>
                 )}
+              </>
+            )}
+
+            {section === "notifications" && (
+              <>
+                <h2>Notifications</h2>
+                <p className="prefs-lead">Get a native notification for inbox activity.</p>
+                <div className="notify-row">
+                  <div>
+                    <div className="notify-title">New tickets</div>
+                    <div className="notify-sub">When a ticket arrives in the inbox.</div>
+                  </div>
+                  <button className={`switch-btn ${notifyTickets ? "on" : ""}`} onClick={toggleTickets}>
+                    <span className="switch"><span className="knob" /></span>
+                  </button>
+                </div>
+                <div className="notify-row">
+                  <div>
+                    <div className="notify-title">New solutions</div>
+                    <div className="notify-sub">When the pi agent finishes a report.</div>
+                  </div>
+                  <button className={`switch-btn ${notifySolutions ? "on" : ""}`} onClick={toggleSolutions}>
+                    <span className="switch"><span className="knob" /></span>
+                  </button>
+                </div>
               </>
             )}
 
@@ -300,6 +365,41 @@ export function Settings({ initial, onSave, onCancel }: Props) {
                     </div>
                   ))}
                 </div>
+              </>
+            )}
+
+            {section === "aboutme" && (
+              <>
+                <h2>Feedback</h2>
+                <div className="about-me">
+                  <img
+                    className="about-avatar"
+                    src="https://github.com/Tschimmy.png?size=160"
+                    alt="Florian Kimmel"
+                  />
+                  <div>
+                    <div className="about-name">Florian Kimmel</div>
+                    <button className="inline-link" onClick={() => openUrl("https://github.com/Tschimmy")}>
+                      @Tschimmy on GitHub ↗
+                    </button>
+                  </div>
+                </div>
+                <p className="prefs-lead">
+                  Personal Aierbaer is a side project to make ClickUp support less painful.
+                  Got a bug, an idea, or feedback? Open an issue — it goes straight to me.
+                </p>
+                <button
+                  className="wiz-btn"
+                  onClick={() => openUrl("https://github.com/Tschimmy/personal-aierbaer/issues/new")}
+                >
+                  Give feedback / report a bug ↗
+                </button>
+                <button
+                  className="inline-link"
+                  onClick={() => openUrl("https://github.com/Tschimmy/personal-aierbaer/issues")}
+                >
+                  Browse existing issues ↗
+                </button>
               </>
             )}
           </div>
