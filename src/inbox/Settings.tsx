@@ -230,9 +230,6 @@ export function Settings({ initial, onSave, onCancel }: Props) {
                     {loading ? "Refreshing…" : "↻ Refresh teams from ClickUp"}
                   </button>
                 )}
-                <div className="prefs-actions">
-                  <button className="primary" disabled={!valid} onClick={doSave}>Save</button>
-                </div>
               </>
             )}
 

@@ -7,6 +7,18 @@ export interface Release {
 /** Newest first. The top entry's version is the current app version. */
 export const RELEASES: Release[] = [
   {
+    version: "0.4.1",
+    date: "2026-08-21",
+    sections: [
+      {
+        heading: "Solve reliability",
+        items: [
+          "Solving no longer depends on a personal note folder, so reports generate consistently on any machine.",
+        ],
+      },
+    ],
+  },
+  {
     version: "0.4.0",
     date: "2026-08-21",
     sections: [

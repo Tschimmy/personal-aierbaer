@@ -3,6 +3,11 @@
 All notable changes to Personal Aierbaer. Follows [Semantic Versioning](https://semver.org).
 The in-app **Settings → Release notes** mirrors this file (`src/lib/releaseNotes.ts`).
 
+## [0.4.1] — 2026-08-21
+
+### Solve reliability
+- Solving no longer depends on a personal note folder, so reports generate consistently on any machine.
+
 ## [0.4.0] — 2026-08-21
 
 ### Inbox & performance
