@@ -763,3 +763,20 @@ body {
   padding: 8px 16px; border-radius: 10px; font-size: 13px; font-weight: 600;
   box-shadow: 0 8px 24px rgba(0,0,0,0.4); z-index: 60;
 }
+
+/* Update-available banner */
+.update-banner {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 9px 16px;
+  background: color-mix(in srgb, var(--accent) 16%, var(--panel));
+  border-bottom: 1px solid var(--accent);
+  font-size: 13px; color: var(--text);
+}
+.update-actions { display: flex; align-items: center; gap: 8px; flex: none; }
+.update-btn {
+  background: var(--accent); color: #14100c; border: none;
+  border-radius: 8px; padding: 6px 14px; font-weight: 600; cursor: pointer; font-size: 13px;
+}
+.update-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.update-dismiss { background: transparent; border: none; color: var(--muted); cursor: pointer; font-size: 13px; }
+.update-dismiss:hover { color: var(--text); }

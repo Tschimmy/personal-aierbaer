@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect, useMemo } from "react";
 import { listen } from "@tauri-apps/api/event";
-import { applyTheme, loadTheme, loadHideResolved, saveHideResolved, getApiSettings, apiHealthy, type ClickUpTask } from "../lib/api";
+import { applyTheme, loadTheme, loadHideResolved, saveHideResolved, getApiSettings, apiHealthy, checkUpdate, installUpdate, restartApp, type ClickUpTask, type UpdateInfo } from "../lib/api";
 import { APP_VERSION } from "../lib/releaseNotes";
 import { Help } from "./Help";
 import { ReportPane } from "./ReportPane";
@@ -63,6 +63,29 @@ export function Inbox({
   const [apiPort, setApiPort] = useState<number | null>(null);
   const [apiOk, setApiOk] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
+  const [update, setUpdate] = useState<UpdateInfo | null>(null);
+  const [updating, setUpdating] = useState(false);
+  const [updateReady, setUpdateReady] = useState(false);
+  const [updateErr, setUpdateErr] = useState<string | null>(null);
+
+  // Check GitHub for a newer release on open.
+  useEffect(() => {
+    checkUpdate().then(setUpdate).catch(() => {});
+  }, []);
+
+  const doInstall = async () => {
+    if (!update) return;
+    setUpdating(true);
+    setUpdateErr(null);
+    try {
+      await installUpdate(update.url);
+      setUpdateReady(true);
+    } catch (e) {
+      setUpdateErr(String(e));
+    } finally {
+      setUpdating(false);
+    }
+  };
   const [toast, setToast] = useState<string | null>(null);
   const showToast = (msg: string) => {
     setToast(msg);
@@ -367,6 +390,25 @@ export function Inbox({
       )}
 
       {error && <div className="banner error">{error}</div>}
+
+      {update && (
+        <div className="update-banner">
+          <span>
+            <b>Version {update.version}</b> is available (you have {update.current}).
+            {updateErr && <span className="err-text"> {updateErr}</span>}
+          </span>
+          <span className="update-actions">
+            {updateReady ? (
+              <button className="update-btn" onClick={restartApp}>Restart to update</button>
+            ) : (
+              <button className="update-btn" onClick={doInstall} disabled={updating}>
+                {updating ? "Downloading…" : "Install"}
+              </button>
+            )}
+            <button className="update-dismiss" onClick={() => setUpdate(null)}>✕</button>
+          </span>
+        </div>
+      )}
 
       <div className={selected ? "split split-open" : "split"} ref={splitRef}>
         <main

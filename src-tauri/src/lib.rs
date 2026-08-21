@@ -4,6 +4,7 @@ mod copilot;
 mod doctor;
 mod pi;
 mod reports;
+mod update;
 
 use std::sync::{Arc, Mutex};
 
@@ -150,6 +151,21 @@ async fn check_skill() -> doctor::SkillStatus {
 #[tauri::command]
 async fn check_copilot() -> doctor::CopilotStatus {
     doctor::check_copilot().await
+}
+
+#[tauri::command]
+async fn check_update() -> Result<Option<update::UpdateInfo>, String> {
+    update::check().await
+}
+
+#[tauri::command]
+async fn install_update(url: String) -> Result<(), String> {
+    update::install(url).await
+}
+
+#[tauri::command]
+fn restart_app(app: AppHandle) {
+    update::restart(&app);
 }
 
 #[tauri::command]
@@ -302,7 +318,10 @@ pub fn run() {
             list_report_ids,
             list_reports_meta,
             save_resolution,
-            delete_resolution
+            delete_resolution,
+            check_update,
+            install_update,
+            restart_app
         ])
         .run(tauri::generate_context!())
         .expect("error while running Personal Aierbaer");

@@ -143,6 +143,28 @@ export async function apiHealthy(port: number): Promise<boolean> {
   }
 }
 
+export interface UpdateInfo {
+  version: string;
+  url: string;
+  notes: string;
+  current: string;
+}
+
+/** Check GitHub for a newer release; null if up to date / unavailable. */
+export function checkUpdate(): Promise<UpdateInfo | null> {
+  return invoke("check_update");
+}
+
+/** Download the release dmg and copy the app into /Applications. */
+export function installUpdate(url: string): Promise<void> {
+  return invoke("install_update", { url });
+}
+
+/** Relaunch the freshly installed app and quit this one. */
+export function restartApp(): Promise<void> {
+  return invoke("restart_app");
+}
+
 /** Build a RuntimeConfig from local storage + clickup config. */
 export function currentRuntimeConfig(): RuntimeConfig | null {
   const cfg = loadConfig();
