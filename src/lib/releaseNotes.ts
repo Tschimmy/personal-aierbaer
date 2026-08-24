@@ -7,6 +7,24 @@ export interface Release {
 /** Newest first. The top entry's version is the current app version. */
 export const RELEASES: Release[] = [
   {
+    version: "0.5.0",
+    date: "2026-08-24",
+    sections: [
+      {
+        heading: "Reliability",
+        items: [
+          "Personal Aierbaer now finds pi and npm reliably even when launched from the Dock or Finder, so solving and setup checks work without a terminal.",
+        ],
+      },
+      {
+        heading: "Setup",
+        items: [
+          "New install script makes first-time setup quicker and more dependable.",
+        ],
+      },
+    ],
+  },
+  {
     version: "0.4.1",
     date: "2026-08-21",
     sections: [

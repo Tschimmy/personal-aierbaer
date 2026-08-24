@@ -3,6 +3,14 @@
 All notable changes to Personal Aierbaer. Follows [Semantic Versioning](https://semver.org).
 The in-app **Settings → Release notes** mirrors this file (`src/lib/releaseNotes.ts`).
 
+## [0.5.0] — 2026-08-24
+
+### Reliability
+- Personal Aierbaer now finds pi and npm reliably even when launched from the Dock or Finder, so solving and setup checks work without a terminal.
+
+### Setup
+- New install script makes first-time setup quicker and more dependable.
+
 ## [0.4.1] — 2026-08-21
 
 ### Solve reliability

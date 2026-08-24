@@ -1,6 +1,6 @@
 [package]
 name = "personal-aierbaer"
-version = "0.4.1"
+version = "0.5.0"
 description = "Personal Aierbaer — local-first ClickUp ticket inbox powered by the pi agent"
 authors = ["fkimmel"]
 edition = "2021"
