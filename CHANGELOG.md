@@ -7,6 +7,10 @@ The in-app **Settings → Release notes** mirrors this file (`src/lib/releaseNot
 
 ### Reliability
 - Personal Aierbaer now finds pi and npm reliably even when launched from the Dock or Finder, so solving and setup checks work without a terminal.
+- Failed solves now show the actual error from pi instead of a bare exit code, and a missing or wrong repo folder is caught with a clear message.
+
+### Clarity
+- The onboarding wizard and Settings now explain what each installed skill does.
 
 ### Setup
 - New install script makes first-time setup quicker and more dependable.

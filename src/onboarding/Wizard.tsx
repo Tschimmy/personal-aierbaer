@@ -178,10 +178,13 @@ function SkillStep({ onBack, onNext }: { onBack: () => void; onNext: () => void 
   return (
     <>
       <Bear />
-      <h1>The clickup-aierbaer-solve skill</h1>
+      <h1>The Aierbaer skills</h1>
       <p className="wiz-lead">
-        The <b>clickup-aierbaer-solve</b> skill teaches pi how to analyze a ticket and
-        write a structured solution report it can learn from next time.
+        Skills are instruction files the local pi agent loads to do its job. Aierbaer
+        installs two: <b>clickup-aierbaer-solve</b> teaches pi how to analyze a ticket
+        and write a structured solution report — reusing your past resolutions so it
+        improves over time — and <b>aierbaer-api</b> lets other coding agents drive
+        Aierbaer over its local API.
       </p>
 
       {state === "checking" && <div className="wiz-status checking">Looking for the skill…</div>}
@@ -275,8 +278,11 @@ function CopilotStep({ onBack, onNext }: { onBack: () => void; onNext: () => voi
       <Bear />
       <h1>GitHub Copilot auth</h1>
       <p className="wiz-lead">
-        The v1 runs on your <b>GitHub Copilot</b> subscription. Aierbaer never
-        sees your token — it just asks the local pi agent to use it.
+        To read a ticket and write a report, the local pi agent needs a language
+        model. Instead of a separate paid API key, Aierbaer uses your existing{" "}
+        <b>GitHub Copilot</b> subscription as that model — so solving costs you
+        nothing extra. Sign in once to let pi use it; Aierbaer never sees your
+        token, it just asks the local agent to use it.
       </p>
 
       {state === "checking" && <div className="wiz-status checking">Checking Copilot auth…</div>}

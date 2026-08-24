@@ -260,7 +260,20 @@ export function Settings({ initial, onSave, onCancel }: Props) {
             {section === "skill" && (
               <>
                 <h2>Skills</h2>
-                <p className="prefs-lead">The clickup-aierbaer-solve and aierbaer-api skills the pi agent uses.</p>
+                <p className="prefs-lead">
+                  Skills are instruction files the local pi agent loads to do its job. Aierbaer installs two into ~/.claude/skills.
+                </p>
+                <ul className="prefs-skill-list">
+                  <li>
+                    <b>clickup-aierbaer-solve</b> — teaches pi how to analyze a ticket and write a structured solution
+                    report. It searches your reports folder for similar past tickets and reuses their recorded
+                    resolutions, so solutions get better over time.
+                  </li>
+                  <li>
+                    <b>aierbaer-api</b> — documents Aierbaer's local HTTP API so other coding agents can list the inbox,
+                    read reports, set resolutions, or trigger a solve on your behalf.
+                  </li>
+                </ul>
                 {skill && skill.installed && skill.up_to_date && (
                   <div className="wiz-status ok">✓ Up to date — v{skill.version}</div>
                 )}

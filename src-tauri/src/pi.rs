@@ -90,6 +90,11 @@ Context file: {}. Existing reports directory: {}. Write the report to: {}",
     // Run the agent inside the target repo so its tools see that codebase.
     if let Some(dir) = repo {
         if !dir.is_empty() {
+            if !std::path::Path::new(dir).is_dir() {
+                return Err(anyhow::anyhow!(
+                    "Repository folder not found: {dir}. Set a valid repo path in Settings → Repo & Reports."
+                ));
+            }
             command.current_dir(dir);
         }
     }
@@ -108,6 +113,24 @@ Context file: {}. Existing reports directory: {}. Write the report to: {}",
         });
     }
 
+    // Drain stderr concurrently: without this the pipe buffer can fill and hang
+    // pi. Stream lines to the log and keep them for the error message.
+    let stderr_buf = std::sync::Arc::new(std::sync::Mutex::new(Vec::<String>::new()));
+    if let Some(stderr) = child.stderr.take() {
+        let mut lines = BufReader::new(stderr).lines();
+        let app2 = app.clone();
+        let tid = task_id.clone();
+        let buf = stderr_buf.clone();
+        tokio::spawn(async move {
+            while let Ok(Some(line)) = lines.next_line().await {
+                if let Ok(mut b) = buf.lock() {
+                    b.push(line.clone());
+                }
+                let _ = app2.emit("pi-output", serde_json::json!({ "taskId": tid, "line": line }));
+            }
+        });
+    }
+
     let status = child.wait().await?;
     let _ = app.emit(
         "pi-done",
@@ -115,7 +138,19 @@ Context file: {}. Existing reports directory: {}. Write the report to: {}",
     );
 
     if !status.success() {
-        return Err(anyhow::anyhow!("pi exited with status {:?}", status.code()));
+        let stderr = stderr_buf
+            .lock()
+            .map(|b| b.join("\n"))
+            .unwrap_or_default();
+        let detail = stderr.trim();
+        if detail.is_empty() {
+            return Err(anyhow::anyhow!("pi exited with status {:?}", status.code()));
+        }
+        return Err(anyhow::anyhow!(
+            "pi exited with status {:?}: {}",
+            status.code(),
+            detail
+        ));
     }
     Ok(report_path)
 }
