@@ -7,6 +7,26 @@ export interface Release {
 /** Newest first. The top entry's version is the current app version. */
 export const RELEASES: Release[] = [
   {
+    version: "0.6.0",
+    date: "2026-08-24",
+    sections: [
+      {
+        heading: "Clearer solve errors",
+        items: [
+          "Failed solves now show the actual error message from pi, not just an exit code, so it's easier to see what went wrong.",
+          "A missing or invalid repo folder is now caught up front with a clear message pointing you to Settings → Repo & Reports.",
+        ],
+      },
+      {
+        heading: "Clearer skill explanations",
+        items: [
+          "The onboarding wizard and Settings now explain both installed skills — clickup-aierbaer-solve and aierbaer-api — and what each one does.",
+          "The Copilot step now explains why sign-in is needed and that solving costs nothing extra beyond your existing GitHub Copilot subscription.",
+        ],
+      },
+    ],
+  },
+  {
     version: "0.5.0",
     date: "2026-08-24",
     sections: [
