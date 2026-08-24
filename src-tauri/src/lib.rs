@@ -2,6 +2,7 @@ mod api;
 mod clickup;
 mod copilot;
 mod doctor;
+mod env_path;
 mod pi;
 mod reports;
 mod update;

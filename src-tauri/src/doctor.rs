@@ -22,9 +22,7 @@ pub struct CopilotStatus {
 }
 
 fn augmented_path() -> String {
-    let home = std::env::var("HOME").unwrap_or_default();
-    let base = std::env::var("PATH").unwrap_or_default();
-    format!("{home}/.local/bin:/opt/homebrew/bin:{base}")
+    crate::env_path::augmented_path()
 }
 
 /// Is `pi` on PATH? Returns its version string when found.

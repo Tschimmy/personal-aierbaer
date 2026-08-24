@@ -42,12 +42,9 @@ fn render_context(d: &ClickUpTaskDetail) -> String {
     )
 }
 
-/// PATH augmentation so we find a user-installed `pi` (npm global / homebrew).
-fn augmented_path() -> String {
-    let home = std::env::var("HOME").unwrap_or_default();
-    let base = std::env::var("PATH").unwrap_or_default();
-    format!("{home}/.local/bin:/opt/homebrew/bin:{base}")
-}
+/// PATH augmentation so we find a user-installed `pi` (npm global / homebrew /
+/// nvm / fnm / volta). Delegates to the shared login-shell resolver.
+use crate::env_path::augmented_path;
 
 /// Spawn `pi` with the clickup-aierbaer-solve skill. Streams stdout lines to the frontend
 /// via the `pi-output` event, writes the report to `report_path`, returns exit ok.

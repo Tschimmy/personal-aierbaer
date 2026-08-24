@@ -44,6 +44,19 @@ make deploy-local  # build .app → /Applications, register the aierbaer:// sche
 Download prebuilt releases (`.dmg`) from the repo's
 **[Releases](https://github.com/Tschimmy/personal-aierbaer/releases)** page.
 
+### Install script (recommended)
+
+Because the app isn't code-signed/notarized, macOS Gatekeeper marks a
+downloaded `.dmg` as “damaged”. The install script fetches the latest release,
+copies the app into `/Applications`, and strips the quarantine flag for you:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Tschimmy/personal-aierbaer/main/scripts/install.sh | bash
+```
+
+Manual alternative: after dragging the app to `/Applications`, run
+`xattr -cr "/Applications/Personal Aierbaer.app"` to clear the quarantine flag.
+
 On first launch the onboarding wizard walks you through: pi agent → skills →
 GitHub Copilot login → model + test → repository → ClickUp.
 
