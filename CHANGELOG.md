@@ -5,6 +5,10 @@ The in-app **Settings → Release notes** mirrors this file (`src/lib/releaseNot
 
 ## [0.6.0] — 2026-08-24
 
+### Live solve progress
+- While a ticket is solving, the report view now shows what the pi agent is doing right now — thinking, searching the codebase, reading files, or writing the report — instead of a generic spinner.
+- Quitting the app now stops any in-progress solves cleanly instead of leaving stray background processes running.
+
 ### Clearer solve errors
 - Failed solves now show the actual error message from pi, not just an exit code, so it's easier to see what went wrong.
 - A missing or invalid repo folder is now caught up front with a clear message pointing you to Settings → Repo & Reports.

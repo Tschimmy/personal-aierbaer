@@ -63,6 +63,7 @@ export function ReportPane({ task, solving, onSolve, onReportsChanged, focused, 
   const [notes, setNotes] = useState("");
   const [savingRes, setSavingRes] = useState(false);
   const [existingRes, setExistingRes] = useState<{ choice: string; notes: string } | null>(null);
+  const [step, setStep] = useState<string>("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
 
@@ -100,13 +101,25 @@ export function ReportPane({ task, solving, onSolve, onReportsChanged, focused, 
   useEffect(() => {
     const unDone = listen<{ taskId: string; ok: boolean }>("pi-done", (e) => {
       onReportsChanged();
-      if (e.payload.taskId === task.id) load();
+      if (e.payload.taskId === task.id) {
+        setStep("");
+        load();
+      }
+    });
+    const unProgress = listen<{ taskId: string; step: string }>("pi-progress", (e) => {
+      if (e.payload.taskId === task.id) setStep(e.payload.step);
     });
     return () => {
       unDone.then((f) => f());
+      unProgress.then((f) => f());
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [task.id]);
+
+  // Reset the shown step whenever a fresh solve starts.
+  useEffect(() => {
+    if (solving) setStep("");
+  }, [solving]);
 
   useEffect(() => {
     if (focused) setActive((a) => a); // no-op; keep current on (re)focus
@@ -297,7 +310,8 @@ export function ReportPane({ task, solving, onSolve, onReportsChanged, focused, 
 
         {solving && (
           <div className="report-empty">
-            <span className="spinner" /> pi agent is analyzing this ticket…
+            <span className="spinner" />
+            <span className="solve-step">{step || "pi agent is analyzing this ticket…"}</span>
           </div>
         )}
 

@@ -46,8 +46,112 @@ fn render_context(d: &ClickUpTaskDetail) -> String {
 /// nvm / fnm / volta). Delegates to the shared login-shell resolver.
 use crate::env_path::augmented_path;
 
-/// Spawn `pi` with the clickup-aierbaer-solve skill. Streams stdout lines to the frontend
-/// via the `pi-output` event, writes the report to `report_path`, returns exit ok.
+use std::collections::HashSet;
+use std::sync::{Arc, Mutex, OnceLock};
+
+/// Registry of live pi child PIDs so we can kill leftovers when the app quits.
+/// Without this, a solve in flight when the app closes is reparented to launchd
+/// and leaks (orphaned `pi` processes under `ppid 1`).
+static CHILDREN: OnceLock<Arc<Mutex<HashSet<u32>>>> = OnceLock::new();
+
+fn registry() -> &'static Arc<Mutex<HashSet<u32>>> {
+    CHILDREN.get_or_init(|| Arc::new(Mutex::new(HashSet::new())))
+}
+
+fn register(pid: u32) {
+    if let Ok(mut s) = registry().lock() {
+        s.insert(pid);
+    }
+}
+
+fn unregister(pid: u32) {
+    if let Ok(mut s) = registry().lock() {
+        s.remove(&pid);
+    }
+}
+
+/// Kill every still-running pi child and its process group. Called on app exit so
+/// no solve is left orphaned. Negative pid targets the whole group, taking down
+/// the bash/grep helpers pi spawned too.
+pub fn kill_all() {
+    let pids: Vec<u32> = registry()
+        .lock()
+        .map(|s| s.iter().copied().collect())
+        .unwrap_or_default();
+    for pid in pids {
+        let _ = std::process::Command::new("kill")
+            .arg("-TERM")
+            .arg(format!("-{pid}"))
+            .status();
+    }
+}
+
+/// Shorten a string to a single line of at most `max` chars for display.
+fn short(s: &str, max: usize) -> String {
+    let one = s.split_whitespace().collect::<Vec<_>>().join(" ");
+    if one.chars().count() > max {
+        format!("{}…", one.chars().take(max).collect::<String>())
+    } else {
+        one
+    }
+}
+
+fn basename(path: &str) -> String {
+    path.rsplit('/').next().unwrap_or(path).to_string()
+}
+
+/// Turn a running tool call into a human step label from its name + args.
+fn tool_label(name: &str, args: &serde_json::Value) -> String {
+    let a = |k: &str| args.get(k).and_then(|v| v.as_str()).unwrap_or("");
+    match name.to_ascii_lowercase().as_str() {
+        "bash" => {
+            let cmd = a("command");
+            if cmd.is_empty() { "Running a command…".into() } else { format!("Running: {}", short(cmd, 60)) }
+        }
+        "read" => {
+            let p = a("path");
+            if p.is_empty() { "Reading a file…".into() } else { format!("Reading {}", basename(p)) }
+        }
+        "write" => "Writing the report…".into(),
+        "edit" => {
+            let p = a("path");
+            if p.is_empty() { "Editing a file…".into() } else { format!("Editing {}", basename(p)) }
+        }
+        "grep" | "glob" => {
+            let pat = if !a("pattern").is_empty() { a("pattern") } else { a("query") };
+            if pat.is_empty() { "Searching the codebase…".into() } else { format!("Searching for \"{}\"", short(pat, 40)) }
+        }
+        "list" | "ls" => "Listing files…".into(),
+        other => format!("Using {other}…"),
+    }
+}
+
+/// Derive a short progress label from one pi `--mode json` event, or None if the
+/// event isn't worth surfacing.
+fn progress_label(v: &serde_json::Value) -> Option<String> {
+    match v.get("type").and_then(|t| t.as_str()) {
+        Some("agent_start") => Some("Starting up…".into()),
+        Some("tool_execution_start") => {
+            let name = v.get("toolName").and_then(|n| n.as_str()).unwrap_or("tool");
+            let args = v.get("args").cloned().unwrap_or(serde_json::Value::Null);
+            Some(tool_label(name, &args))
+        }
+        Some("message_update") => match v
+            .get("assistantMessageEvent")
+            .and_then(|e| e.get("type"))
+            .and_then(|t| t.as_str())
+        {
+            Some("thinking_start") => Some("Thinking…".into()),
+            Some("text_start") => Some("Writing the report…".into()),
+            _ => None,
+        },
+        Some("agent_end") => Some("Finishing up…".into()),
+        _ => None,
+    }
+}
+
+/// Spawn `pi` with the clickup-aierbaer-solve skill. Streams progress steps to the
+/// frontend via the `pi-progress` event, writes the report to `report_path`.
 pub async fn run_solve(
     app: &AppHandle,
     detail: &ClickUpTaskDetail,
@@ -78,6 +182,8 @@ Context file: {}. Existing reports directory: {}. Write the report to: {}",
     command
         .args([
             "--print",
+            "--mode",
+            "json",
             "--model",
             model,
             "--skill",
@@ -86,7 +192,11 @@ Context file: {}. Existing reports directory: {}. Write the report to: {}",
         ])
         .env("PATH", augmented_path())
         .stdout(Stdio::piped())
-        .stderr(Stdio::piped());
+        .stderr(Stdio::piped())
+        // Own process group so kill_all can take down pi + its bash/grep helpers.
+        .process_group(0)
+        // Kill pi if this future is dropped (e.g. solve cancelled).
+        .kill_on_drop(true);
     // Run the agent inside the target repo so its tools see that codebase.
     if let Some(dir) = repo {
         if !dir.is_empty() {
@@ -99,39 +209,55 @@ Context file: {}. Existing reports directory: {}. Write the report to: {}",
         }
     }
     let mut child = command.spawn()?;
+    let pid = child.id();
+    if let Some(pid) = pid {
+        register(pid);
+    }
 
     let task_id = detail.id.clone();
 
+    // Parse pi's json event stream into human progress steps. Only emit when the
+    // label changes, so the UI shows the current step without flicker.
     if let Some(stdout) = child.stdout.take() {
         let mut lines = BufReader::new(stdout).lines();
         let app2 = app.clone();
         let tid = task_id.clone();
         tokio::spawn(async move {
+            let mut last = String::new();
             while let Ok(Some(line)) = lines.next_line().await {
-                let _ = app2.emit("pi-output", serde_json::json!({ "taskId": tid, "line": line }));
+                let Ok(v) = serde_json::from_str::<serde_json::Value>(&line) else { continue };
+                if let Some(step) = progress_label(&v) {
+                    if step != last {
+                        last = step.clone();
+                        let _ = app2.emit(
+                            "pi-progress",
+                            serde_json::json!({ "taskId": tid, "step": step }),
+                        );
+                    }
+                }
             }
         });
     }
 
     // Drain stderr concurrently: without this the pipe buffer can fill and hang
-    // pi. Stream lines to the log and keep them for the error message.
-    let stderr_buf = std::sync::Arc::new(std::sync::Mutex::new(Vec::<String>::new()));
+    // pi. Keep the lines for the error message.
+    let stderr_buf = Arc::new(Mutex::new(Vec::<String>::new()));
     if let Some(stderr) = child.stderr.take() {
         let mut lines = BufReader::new(stderr).lines();
-        let app2 = app.clone();
-        let tid = task_id.clone();
         let buf = stderr_buf.clone();
         tokio::spawn(async move {
             while let Ok(Some(line)) = lines.next_line().await {
                 if let Ok(mut b) = buf.lock() {
-                    b.push(line.clone());
+                    b.push(line);
                 }
-                let _ = app2.emit("pi-output", serde_json::json!({ "taskId": tid, "line": line }));
             }
         });
     }
 
     let status = child.wait().await?;
+    if let Some(pid) = pid {
+        unregister(pid);
+    }
     let _ = app.emit(
         "pi-done",
         serde_json::json!({ "taskId": task_id, "ok": status.success(), "report": report_path.to_string_lossy() }),

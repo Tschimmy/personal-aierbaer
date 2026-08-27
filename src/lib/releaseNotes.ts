@@ -11,6 +11,13 @@ export const RELEASES: Release[] = [
     date: "2026-08-24",
     sections: [
       {
+        heading: "Live solve progress",
+        items: [
+          "While a ticket is solving, the report view now shows what the pi agent is doing right now — thinking, searching the codebase, reading files, or writing the report — instead of a generic spinner.",
+          "Quitting the app now stops any in-progress solves cleanly instead of leaving stray background processes running.",
+        ],
+      },
+      {
         heading: "Clearer solve errors",
         items: [
           "Failed solves now show the actual error message from pi, not just an exit code, so it's easier to see what went wrong.",

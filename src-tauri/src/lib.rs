@@ -325,6 +325,12 @@ pub fn run() {
             install_update,
             restart_app
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running Personal Aierbaer");
+        .build(tauri::generate_context!())
+        .expect("error while building Personal Aierbaer")
+        .run(|_app, event| {
+            // Kill any in-flight pi solves so nothing is left orphaned on quit.
+            if let tauri::RunEvent::Exit = event {
+                pi::kill_all();
+            }
+        });
 }

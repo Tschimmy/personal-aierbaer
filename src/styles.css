@@ -374,6 +374,7 @@ body {
 
 .report-body { flex: 1; overflow-y: auto; padding: 18px 22px; }
 .report-empty { color: var(--muted); text-align: center; margin-top: 30px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+.solve-step { font-variant-numeric: tabular-nums; max-width: 420px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* rendered markdown */
 .report-md { font-size: 13.5px; line-height: 1.6; color: var(--text); max-width: 760px; }
