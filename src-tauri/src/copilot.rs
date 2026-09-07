@@ -143,9 +143,15 @@ async fn fetch_model_ids(client: &reqwest::Client, token: &str) -> Result<Vec<St
             if item["capabilities"]["supports"]["tool_calls"].as_bool() == Some(false) {
                 continue;
             }
-            if item["model_picker_enabled"].as_bool() == Some(true)
-                && item["policy"]["state"].as_str() != Some("disabled")
-            {
+            if item["model_picker_enabled"].as_bool() != Some(true) {
+                continue;
+            }
+            // A model is only usable when it has no gating policy or its policy
+            // is explicitly `enabled`. `unconfigured` (needs a GitHub toggle →
+            // 403) and `disabled` both mean the model would fail on use.
+            let policy = &item["policy"];
+            let usable = policy.is_null() || policy["state"].as_str() == Some("enabled");
+            if usable {
                 if let Some(id) = item["id"].as_str() {
                     ids.push(id.to_string());
                 }
