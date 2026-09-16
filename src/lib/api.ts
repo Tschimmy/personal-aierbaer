@@ -115,6 +115,17 @@ export function saveNotifySolutions(v: boolean) {
   localStorage.setItem("aierbaer.notifySolutions", v ? "1" : "0");
 }
 
+/** Launch-at-login (autostart) controls. Backed by the OS, not localStorage. */
+export async function isAutostartEnabled(): Promise<boolean> {
+  const { isEnabled } = await import("@tauri-apps/plugin-autostart");
+  return isEnabled();
+}
+export async function setAutostart(v: boolean): Promise<void> {
+  const { enable, disable } = await import("@tauri-apps/plugin-autostart");
+  if (v) await enable();
+  else await disable();
+}
+
 /** Known ticket ids (to detect new arrivals). null = never seeded yet. */
 export function loadKnownTickets(): string[] | null {
   const raw = localStorage.getItem("aierbaer.knownTickets");

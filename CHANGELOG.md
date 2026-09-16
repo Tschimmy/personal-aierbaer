@@ -3,6 +3,11 @@
 All notable changes to Personal Aierbaer. Follows [Semantic Versioning](https://semver.org).
 The in-app **Settings → Release notes** mirrors this file (`src/lib/releaseNotes.ts`).
 
+## [0.7.0] — 2026-08-24
+
+### Launch at login
+- New Settings → Startup section with a Launch at login toggle, so Personal Aierbaer can start automatically when you log in to your Mac.
+
 ## [0.6.0] — 2026-08-24
 
 ### Live solve progress

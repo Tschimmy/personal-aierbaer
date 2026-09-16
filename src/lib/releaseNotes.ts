@@ -7,6 +7,18 @@ export interface Release {
 /** Newest first. The top entry's version is the current app version. */
 export const RELEASES: Release[] = [
   {
+    version: "0.7.0",
+    date: "2026-08-24",
+    sections: [
+      {
+        heading: "Launch at login",
+        items: [
+          "New Settings → Startup section with a Launch at login toggle, so Personal Aierbaer can start automatically when you log in to your Mac.",
+        ],
+      },
+    ],
+  },
+  {
     version: "0.6.0",
     date: "2026-08-24",
     sections: [

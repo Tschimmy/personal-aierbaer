@@ -19,6 +19,8 @@ import {
   saveNotifyTickets,
   loadNotifySolutions,
   saveNotifySolutions,
+  isAutostartEnabled,
+  setAutostart,
   notify,
   DEFAULT_OWNER_FIELD_ID,
   type ClickUpConfig,
@@ -36,13 +38,14 @@ interface Props {
   onCancel?: () => void;
 }
 
-type Section = "clickup" | "solving" | "skill" | "api" | "notifications" | "about" | "aboutme";
+type Section = "clickup" | "solving" | "skill" | "api" | "notifications" | "startup" | "about" | "aboutme";
 
 const SECTIONS: { id: Section; label: string }[] = [
   { id: "clickup", label: "ClickUp" },
   { id: "solving", label: "Repository & Reports" },
   { id: "skill", label: "Skills" },
   { id: "notifications", label: "Notifications" },
+  { id: "startup", label: "Startup" },
   { id: "api", label: "Local API" },
   { id: "about", label: "Release notes" },
   { id: "aboutme", label: "Feedback" },
@@ -67,6 +70,7 @@ export function Settings({ initial, onSave, onCancel }: Props) {
   const [copied, setCopied] = useState("");
   const [notifyTickets, setNotifyTickets] = useState(loadNotifyTickets());
   const [notifySolutions, setNotifySolutions] = useState(loadNotifySolutions());
+  const [autostart, setAutostartState] = useState(false);
 
   const copy = async (text: string, key: string) => {
     try {
@@ -93,6 +97,7 @@ export function Settings({ initial, onSave, onCancel }: Props) {
       setApiSettings(s);
       setPortInput(String(s.port));
     });
+    isAutostartEnabled().then(setAutostartState).catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -145,6 +150,15 @@ export function Settings({ initial, onSave, onCancel }: Props) {
     setNotifySolutions(v);
     saveNotifySolutions(v);
     if (v) notify("Notifications on", "You'll be notified when solutions are ready.");
+  };
+  const toggleAutostart = async () => {
+    const v = !autostart;
+    try {
+      await setAutostart(v);
+      setAutostartState(v);
+    } catch (e) {
+      setError(String(e));
+    }
   };
 
   const valid = token && teamId && fieldId;
@@ -311,6 +325,22 @@ export function Settings({ initial, onSave, onCancel }: Props) {
                     <div className="notify-sub">When the pi agent finishes a report.</div>
                   </div>
                   <button className={`switch-btn ${notifySolutions ? "on" : ""}`} onClick={toggleSolutions}>
+                    <span className="switch"><span className="knob" /></span>
+                  </button>
+                </div>
+              </>
+            )}
+
+            {section === "startup" && (
+              <>
+                <h2>Startup</h2>
+                <p className="prefs-lead">Control whether Aierbaer launches on its own.</p>
+                <div className="notify-row">
+                  <div>
+                    <div className="notify-title">Launch at login</div>
+                    <div className="notify-sub">Start Aierbaer automatically when you log in.</div>
+                  </div>
+                  <button className={`switch-btn ${autostart ? "on" : ""}`} onClick={toggleAutostart}>
                     <span className="switch"><span className="knob" /></span>
                   </button>
                 </div>

@@ -1,6 +1,6 @@
 [package]
 name = "personal-aierbaer"
-version = "0.6.0"
+version = "0.7.0"
 description = "Personal Aierbaer — local-first ClickUp ticket inbox powered by the pi agent"
 authors = ["fkimmel"]
 edition = "2021"
@@ -28,3 +28,4 @@ tower-http = { version = "0.6", features = ["cors"] }
 rand = "0.8"
 anyhow = "1"
 chrono = { version = "0.4", features = ["clock"] }
+tauri-plugin-autostart = "2.5.1"
