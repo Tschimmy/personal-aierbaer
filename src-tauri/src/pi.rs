@@ -46,6 +46,32 @@ fn render_context(d: &ClickUpTaskDetail) -> String {
 /// nvm / fnm / volta). Delegates to the shared login-shell resolver.
 use crate::env_path::augmented_path;
 
+/// A guaranteed-valid working directory for spawned children. If the app's own
+/// cwd was deleted/unmounted, inheriting it makes `pi` crash at startup with
+/// `EPERM: operation not permitted, uv_cwd` before it runs. Fall back to HOME,
+/// then the temp dir, then "/".
+fn safe_cwd() -> PathBuf {
+    if let Ok(cwd) = std::env::current_dir() {
+        if cwd.is_dir() {
+            return cwd;
+        }
+    }
+    if let Some(home) = dirs_home() {
+        if home.is_dir() {
+            return home;
+        }
+    }
+    let tmp = std::env::temp_dir();
+    if tmp.is_dir() {
+        return tmp;
+    }
+    PathBuf::from("/")
+}
+
+fn dirs_home() -> Option<PathBuf> {
+    std::env::var_os("HOME").map(PathBuf::from)
+}
+
 use std::collections::HashSet;
 use std::sync::{Arc, Mutex, OnceLock};
 
@@ -198,6 +224,9 @@ Context file: {}. Existing reports directory: {}. Write the report to: {}",
         // Kill pi if this future is dropped (e.g. solve cancelled).
         .kill_on_drop(true);
     // Run the agent inside the target repo so its tools see that codebase.
+    // Always pin a valid cwd: inheriting a deleted app cwd makes pi crash with
+    // `EPERM uv_cwd` at startup.
+    let mut cwd_set = false;
     if let Some(dir) = repo {
         if !dir.is_empty() {
             if !std::path::Path::new(dir).is_dir() {
@@ -206,7 +235,11 @@ Context file: {}. Existing reports directory: {}. Write the report to: {}",
                 ));
             }
             command.current_dir(dir);
+            cwd_set = true;
         }
+    }
+    if !cwd_set {
+        command.current_dir(safe_cwd());
     }
     let mut child = command.spawn()?;
     let pid = child.id();
@@ -292,6 +325,9 @@ pub async fn run_test(model: &str) -> Result<String, String> {
             "Reply with exactly: Hello World",
         ])
         .env("PATH", augmented_path())
+        // Pin a valid cwd so pi doesn't crash with `EPERM uv_cwd` if the app's
+        // own working directory was deleted/unmounted.
+        .current_dir(safe_cwd())
         .output()
         .await
         .map_err(|e| e.to_string())?;

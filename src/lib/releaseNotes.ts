@@ -7,6 +7,18 @@ export interface Release {
 /** Newest first. The top entry's version is the current app version. */
 export const RELEASES: Release[] = [
   {
+    version: "0.7.1",
+    date: "2026-10-20",
+    sections: [
+      {
+        heading: "More reliable solving",
+        items: [
+          "Solving and the model connection test no longer crash on startup if the app's working folder was deleted, moved, or unmounted — Personal Aierbaer now always runs pi from a valid folder.",
+        ],
+      },
+    ],
+  },
+  {
     version: "0.7.0",
     date: "2026-08-24",
     sections: [

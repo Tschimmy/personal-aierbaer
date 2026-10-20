@@ -3,6 +3,11 @@
 All notable changes to Personal Aierbaer. Follows [Semantic Versioning](https://semver.org).
 The in-app **Settings → Release notes** mirrors this file (`src/lib/releaseNotes.ts`).
 
+## [0.7.1] — 2026-10-20
+
+### More reliable solving
+- Solving and the model connection test no longer crash on startup if the app's working folder was deleted, moved, or unmounted — Personal Aierbaer now always runs pi from a valid folder.
+
 ## [0.7.0] — 2026-08-24
 
 ### Launch at login
