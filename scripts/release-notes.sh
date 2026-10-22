@@ -44,7 +44,7 @@ Do not modify anything else. Do not bump version numbers. Keep it concise.
 EOF
 )
 
-claude -p --no-session-persistence --model opus --permission-mode acceptEdits --allowedTools "Read,Edit" "$prompt" </dev/null >/dev/null 2>&1 || true
+claude -p --no-session-persistence --model opus --permission-mode acceptEdits --allowedTools "Read,Edit" -- "$prompt" </dev/null >/dev/null 2>&1 || true
 
 if ! grep -q "version: \"$VER\"" src/lib/releaseNotes.ts 2>/dev/null; then
   echo "claude did not add a v$VER entry to src/lib/releaseNotes.ts" >&2
