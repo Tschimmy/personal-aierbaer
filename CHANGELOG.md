@@ -3,6 +3,13 @@
 All notable changes to Personal Aierbaer. Follows [Semantic Versioning](https://semver.org).
 The in-app **Settings → Release notes** mirrors this file (`src/lib/releaseNotes.ts`).
 
+## [0.8.0] — 2026-10-22
+
+### Now powered by Claude Code
+- Solving now runs on Claude Code with your own Claude subscription — no more pi or GitHub Copilot setup.
+- The setup wizard installs Claude Code if needed and signs you in, then lets you pick Opus, Sonnet or Haiku and test the connection.
+- Existing model choices are migrated automatically (default: Opus). Re-run the skills update if prompted.
+
 ## [0.7.1] — 2026-10-20
 
 ### More reliable solving

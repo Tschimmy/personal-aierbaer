@@ -132,7 +132,7 @@ export function App() {
 
   // Notify when a solve finishes and a report is ready.
   useEffect(() => {
-    const un = listen<{ taskId: string; ok: boolean }>("pi-done", (e) => {
+    const un = listen<{ taskId: string; ok: boolean }>("solve-done", (e) => {
       if (e.payload.ok && loadNotifySolutions()) {
         const t = tasksRef.current.find((x) => x.id === e.payload.taskId);
         notify("Solution ready", t ? t.name : e.payload.taskId);

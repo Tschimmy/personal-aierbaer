@@ -1,9 +1,12 @@
 use serde::Serialize;
 
 #[derive(Serialize)]
-pub struct PiStatus {
+pub struct ClaudeStatus {
     pub installed: bool,
     pub version: Option<String>,
+    pub logged_in: bool,
+    pub auth_method: Option<String>,
+    pub email: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -15,29 +18,50 @@ pub struct SkillStatus {
     pub path: String,
 }
 
-#[derive(Serialize)]
-pub struct CopilotStatus {
-    pub ready: bool,
-    pub auth_type: Option<String>,
-}
-
 fn augmented_path() -> String {
     crate::env_path::augmented_path()
 }
 
-/// Is `pi` on PATH? Returns its version string when found.
-pub async fn check_pi() -> PiStatus {
-    let out = tokio::process::Command::new("pi")
+/// Is `claude` on PATH, and is it signed in? Version from `--version`, login
+/// state from `claude auth status` (JSON on stdout; may exit non-zero when
+/// logged out, so we parse stdout regardless of exit code).
+pub async fn check_claude() -> ClaudeStatus {
+    let ver = tokio::process::Command::new("claude")
         .arg("--version")
         .env("PATH", augmented_path())
+        .stdin(std::process::Stdio::null())
         .output()
         .await;
-    match out {
+    let version = match ver {
         Ok(o) if o.status.success() => {
-            let v = String::from_utf8_lossy(&o.stdout).trim().to_string();
-            PiStatus { installed: true, version: Some(v) }
+            Some(String::from_utf8_lossy(&o.stdout).trim().to_string())
         }
-        _ => PiStatus { installed: false, version: None },
+        _ => {
+            return ClaudeStatus {
+                installed: false,
+                version: None,
+                logged_in: false,
+                auth_method: None,
+                email: None,
+            }
+        }
+    };
+    let auth = tokio::process::Command::new("claude")
+        .args(["auth", "status", "--json"])
+        .env("PATH", augmented_path())
+        .stdin(std::process::Stdio::null())
+        .output()
+        .await;
+    let v: serde_json::Value = auth
+        .ok()
+        .and_then(|o| serde_json::from_slice(&o.stdout).ok())
+        .unwrap_or(serde_json::Value::Null);
+    ClaudeStatus {
+        installed: true,
+        version,
+        logged_in: v["loggedIn"].as_bool() == Some(true),
+        auth_method: v["authMethod"].as_str().map(String::from),
+        email: v["email"].as_str().map(String::from),
     }
 }
 
@@ -89,29 +113,8 @@ fn parse_frontmatter_version(md: &str) -> Option<String> {
     None
 }
 
-/// Is GitHub Copilot auth ready for pi? Uses `pi auth check`.
-pub async fn check_copilot() -> CopilotStatus {
-    let out = tokio::process::Command::new("pi")
-        .args(["auth", "check", "--provider", "github-copilot", "--json"])
-        .env("PATH", augmented_path())
-        .output()
-        .await;
-    match out {
-        Ok(o) if o.status.success() => {
-            let v: serde_json::Value =
-                serde_json::from_slice(&o.stdout).unwrap_or(serde_json::Value::Null);
-            let ready = v["status"].as_str() == Some("ready");
-            CopilotStatus {
-                ready,
-                auth_type: v["authType"].as_str().map(String::from),
-            }
-        }
-        _ => CopilotStatus { ready: false, auth_type: None },
-    }
-}
-
 /// Open Terminal.app and run a command (macOS). Used for install / login actions
-/// that need an interactive TTY (e.g. pi's `/login github-copilot`).
+/// that need an interactive TTY (e.g. `claude auth login`).
 pub fn open_terminal(command: &str) -> Result<(), String> {
     let escaped = command.replace('\\', "\\\\").replace('"', "\\\"");
     let script = format!(
@@ -125,24 +128,22 @@ pub fn open_terminal(command: &str) -> Result<(), String> {
         .map_err(|e| e.to_string())
 }
 
-/// Install pi globally, headless (no Terminal). Honors npm_config_prefix from the
-/// environment (so the sandbox test installs into its throwaway prefix).
-pub async fn install_pi() -> Result<(), String> {
-    let out = tokio::process::Command::new("npm")
-        .args([
-            "install",
-            "-g",
-            "--ignore-scripts",
-            "@earendil-works/pi-coding-agent",
-        ])
+/// Install Claude Code with the official native installer, headless (no
+/// Terminal, no Node needed). Installs into ~/.local/bin, which respects $HOME
+/// (so the sandbox test installs into its throwaway home).
+pub async fn install_claude() -> Result<(), String> {
+    let out = tokio::process::Command::new("bash")
+        .args(["-c", "curl -fsSL https://claude.ai/install.sh | bash"])
         .env("PATH", augmented_path())
+        .stdin(std::process::Stdio::null())
         .output()
         .await
         .map_err(|e| e.to_string())?;
     if out.status.success() {
         Ok(())
     } else {
-        Err(String::from_utf8_lossy(&out.stderr).trim().to_string())
+        let err = String::from_utf8_lossy(&out.stderr).trim().to_string();
+        Err(if err.is_empty() { String::from_utf8_lossy(&out.stdout).trim().to_string() } else { err })
     }
 }
 

@@ -1,8 +1,8 @@
-//! Resolve a usable PATH for spawning user-installed CLIs (`pi`, `npm`).
+//! Resolve a usable PATH for spawning user-installed CLIs (`claude`).
 //!
 //! GUI apps launched from Finder inherit launchd's minimal PATH
-//! (`/usr/bin:/bin:/usr/sbin:/sbin`), so they miss node/npm/pi installed via
-//! nvm, fnm, volta, Homebrew, or the official Node installer. We recover the
+//! (`/usr/bin:/bin:/usr/sbin:/sbin`), so they miss claude installed via
+//! the native installer, Homebrew, or npm (nvm, fnm, volta). We recover the
 //! real PATH by asking the user's login+interactive shell, then merge in a few
 //! well-known fallbacks. Result is cached for the process lifetime.
 
@@ -30,7 +30,7 @@ fn shell_path() -> Option<String> {
     }
 }
 
-/// PATH for spawning `pi` / `npm`: login-shell PATH (if resolvable) plus the
+/// PATH for spawning `claude`: login-shell PATH (if resolvable) plus the
 /// current PATH and static fallbacks, deduped, order-preserving.
 pub fn augmented_path() -> String {
     CACHED.get_or_init(build).clone()

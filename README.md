@@ -11,12 +11,12 @@
 ---
 
 Personal Aierbaer watches your ClickUp support inbox. For each ticket, a local
-[**pi**](https://github.com/earendil-works) agent reads it, looks at your repo
+[**Claude Code**](https://claude.com/claude-code) agent reads it, looks at your repo
 and past solutions, and drafts a structured **solution report**. You review it,
 record which option actually fixed it, and those resolutions become a memory the
 agent reuses on similar tickets later.
 
-Everything runs on your Mac, on your GitHub Copilot subscription. A local HTTP
+Everything runs on your Mac, on your Claude subscription. A local HTTP
 API and deep links let other agents or your own dashboard build on top of it.
 
 ## Highlights
@@ -27,14 +27,14 @@ API and deep links let other agents or your own dashboard build on top of it.
 - ✅ **Resolutions** — record the real fix; resolved tickets go green and feed the agent's memory.
 - ⌨️ **Keyboard-driven** — Vim-style navigation, context-aware shortcut legend.
 - 🔌 **Local HTTP API** — drive the inbox/reports/resolutions from any tool.
-- 🧩 **pi skills** — `clickup-aierbaer-solve` (the analyzer) and `aierbaer-api` (so other agents can talk to the app).
+- 🧩 **Claude Code skills** — `clickup-aierbaer-solve` (the analyzer) and `aierbaer-api` (so other agents can talk to the app).
 - 🔗 **Deep links** — `aierbaer://open/<id>` and `aierbaer://solve/<id>`.
 - 🌗 **Dark / light theme.**
 
 ## Getting started
 
-Requirements: macOS, [pi](https://github.com/earendil-works) CLI, a GitHub
-Copilot subscription, Rust + Node.
+Requirements: macOS, [Claude Code](https://claude.com/claude-code) CLI with a Claude
+subscription (the wizard can install it), Rust + Node.
 
 ```bash
 make dev           # run in development
@@ -57,8 +57,8 @@ curl -fsSL https://raw.githubusercontent.com/Tschimmy/personal-aierbaer/main/scr
 Manual alternative: after dragging the app to `/Applications`, run
 `xattr -cr "/Applications/Personal Aierbaer.app"` to clear the quarantine flag.
 
-On first launch the onboarding wizard walks you through: pi agent → skills →
-GitHub Copilot login → model + test → repository → ClickUp.
+On first launch the onboarding wizard walks you through: Claude Code (install + sign-in) →
+skills → model + test → repository → ClickUp.
 
 ## Keyboard shortcuts
 
@@ -91,13 +91,13 @@ to talk to the app for you.
 
 ## Versioning
 
-Semantic versioning. Release notes are **written by a pi agent** from the changes
+Semantic versioning. Release notes are **written by a Claude Code agent** from the changes
 since the last tag, and live in the app (Settings → Release notes), in
 **[CHANGELOG.md](CHANGELOG.md)**, and `src/lib/releaseNotes.ts`. To cut a release:
 
 ```bash
-make version               # a pi agent suggests the next x.y.z from changes since the last release
-make deploy                # default: pi picks the version + writes notes, then bump/commit/tag/push
+make version               # a Claude Code agent suggests the next x.y.z from changes since the last release
+make deploy                # default: Claude picks the version + writes notes, then bump/commit/tag/push
 make deploy V=x.y.z        # explicit version
 make deploy BUMP=minor     # patch | minor | major from current
 ```
@@ -115,5 +115,5 @@ to the Releases page.
 ---
 
 <div align="center">
-<sub>Local-first. Your tickets, your repo, your Copilot — nothing leaves your Mac except the ClickUp calls you already make.</sub>
+<sub>Local-first. Your tickets, your repo, your Claude — nothing leaves your Mac except the ClickUp calls you already make.</sub>
 </div>

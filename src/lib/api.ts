@@ -233,9 +233,12 @@ export function readReport(path: string): Promise<string> {
   return invoke("read_report", { path });
 }
 
-export interface PiStatus {
+export interface ClaudeStatus {
   installed: boolean;
   version: string | null;
+  logged_in: boolean;
+  auth_method: string | null;
+  email: string | null;
 }
 
 export interface SkillStatus {
@@ -244,11 +247,6 @@ export interface SkillStatus {
   bundled: string | null;
   up_to_date: boolean;
   path: string;
-}
-
-export interface CopilotStatus {
-  ready: boolean;
-  auth_type: string | null;
 }
 
 export interface Team {
@@ -273,38 +271,32 @@ export function clickupTokenUrl(teamId?: string): string {
   return `https://app.clickup.com/${id}/settings/team/${id}/clickup-api`;
 }
 
-export function checkPi(): Promise<PiStatus> {
-  return invoke("check_pi");
+export function checkClaude(): Promise<ClaudeStatus> {
+  return invoke("check_claude");
 }
 
 export function checkSkill(): Promise<SkillStatus> {
   return invoke("check_skill");
 }
 
-export function checkCopilot(): Promise<CopilotStatus> {
-  return invoke("check_copilot");
+/** Smoke-test Claude Code with a trivial prompt; resolves with its stdout. */
+export function testClaude(model: string): Promise<string> {
+  return invoke("test_claude", { model });
 }
 
-/** Runs the full Copilot device-code flow in the background; resolves when ready.
- *  Listen for the `copilot-device` event to show the user code + URL. */
-export function copilotLogin(): Promise<void> {
-  return invoke("copilot_login");
-}
+/** Claude Code model aliases; the CLI resolves each to the newest model. */
+export const MODELS = [
+  { id: "opus", label: "Opus — most capable" },
+  { id: "sonnet", label: "Sonnet — faster" },
+  { id: "haiku", label: "Haiku — fastest" },
+];
 
-/** Bare Copilot model ids allowed for this account, e.g. "claude-opus-4.8". */
-export function copilotModels(): Promise<string[]> {
-  return invoke("copilot_models");
-}
-
-/** Smoke-test pi with a trivial prompt; resolves with pi's stdout. */
-export function testPi(model: string): Promise<string> {
-  return invoke("test_pi", { model });
-}
-
-export const DEFAULT_MODEL = "github-copilot/claude-opus-4.8";
+export const DEFAULT_MODEL = "opus";
 
 export function loadModel(): string {
-  return localStorage.getItem("aierbaer.model") || DEFAULT_MODEL;
+  const m = localStorage.getItem("aierbaer.model");
+  // Migrate legacy pi ids ("github-copilot/…") to a Claude Code alias.
+  return m && MODELS.some((x) => x.id === m) ? m : DEFAULT_MODEL;
 }
 
 export function saveModel(model: string) {
@@ -319,21 +311,12 @@ export function saveRepo(path: string) {
   localStorage.setItem("aierbaer.repo", path);
 }
 
-/** Pick a sensible default from bare ids: newest Opus, else first. Returns a
- *  full pi id (github-copilot/<id>). */
-export function pickDefaultModel(ids: string[]): string {
-  if (ids.includes("claude-opus-4.8")) return "github-copilot/claude-opus-4.8";
-  const opus = ids.filter((i) => /opus/i.test(i)).sort().reverse()[0];
-  const chosen = opus || ids[0];
-  return chosen ? `github-copilot/${chosen}` : DEFAULT_MODEL;
-}
-
 export function openTerminal(command: string): Promise<void> {
   return invoke("open_terminal", { command });
 }
 
-export function installPi(): Promise<void> {
-  return invoke("install_pi");
+export function installClaude(): Promise<void> {
+  return invoke("install_claude");
 }
 
 export function installSkill(): Promise<void> {

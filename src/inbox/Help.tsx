@@ -44,7 +44,7 @@ export function Help({ onClose }: { onClose: () => void }) {
             <h3>The idea</h3>
             <p>
               Aierbaer watches your ClickUp support inbox. For each ticket, a local
-              <b> pi</b> agent reads it, looks at your repo and past solutions, and
+              <b> Claude Code</b> agent reads it, looks at your repo and past solutions, and
               drafts a structured <b>solution report</b>. You review it, and record
               which option actually fixed it. Those resolutions become a memory the
               agent reuses on similar tickets later.
@@ -76,14 +76,14 @@ export function Help({ onClose }: { onClose: () => void }) {
             </ul>
             <p>
               So you can build <b>your own dashboard</b> on top of Aierbaer without
-              re-implementing the ClickUp/pi integration — Aierbaer stays the engine.
+              re-implementing the ClickUp/Claude integration — Aierbaer stays the engine.
             </p>
           </section>
 
           <section>
             <h3>The aierbaer-api skill</h3>
             <p>
-              Your coding agent of choice (via pi/Claude/etc.) can use the installed
+              Your coding agent of choice (Claude Code or similar) can use the installed
               <b> aierbaer-api</b> skill to talk to the app for you. Ask it things like
               "list unresolved Aierbaer tickets", "show the report for &lt;id&gt;", or
               "mark &lt;id&gt; solved with option A". It reads the token from
@@ -109,7 +109,7 @@ export function Help({ onClose }: { onClose: () => void }) {
           <section>
             <h3>Limits</h3>
             <ul>
-              <li>v1 runs on your GitHub Copilot subscription; everything is local.</li>
+              <li>runs on your Claude subscription via Claude Code; everything is local.</li>
               <li>The agent proposes — you decide. Always confirm the real fix.</li>
               <li>Reports live on your Mac; there's no shared team memory yet.</li>
             </ul>

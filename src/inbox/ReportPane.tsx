@@ -99,14 +99,14 @@ export function ReportPane({ task, solving, onSolve, onReportsChanged, focused, 
   }, [task.id]);
 
   useEffect(() => {
-    const unDone = listen<{ taskId: string; ok: boolean }>("pi-done", (e) => {
+    const unDone = listen<{ taskId: string; ok: boolean }>("solve-done", (e) => {
       onReportsChanged();
       if (e.payload.taskId === task.id) {
         setStep("");
         load();
       }
     });
-    const unProgress = listen<{ taskId: string; step: string }>("pi-progress", (e) => {
+    const unProgress = listen<{ taskId: string; step: string }>("solve-progress", (e) => {
       if (e.payload.taskId === task.id) setStep(e.payload.step);
     });
     return () => {
@@ -311,7 +311,7 @@ export function ReportPane({ task, solving, onSolve, onReportsChanged, focused, 
         {solving && (
           <div className="report-empty">
             <span className="spinner" />
-            <span className="solve-step">{step || "pi agent is analyzing this ticket…"}</span>
+            <span className="solve-step">{step || "Claude is analyzing this ticket…"}</span>
           </div>
         )}
 

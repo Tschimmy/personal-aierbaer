@@ -7,6 +7,20 @@ export interface Release {
 /** Newest first. The top entry's version is the current app version. */
 export const RELEASES: Release[] = [
   {
+    version: "0.8.0",
+    date: "2026-10-22",
+    sections: [
+      {
+        heading: "Now powered by Claude Code",
+        items: [
+          "Solving now runs on Claude Code with your own Claude subscription — no more pi or GitHub Copilot setup.",
+          "The setup wizard installs Claude Code if needed and signs you in, then lets you pick Opus, Sonnet or Haiku and test the connection.",
+          "Existing model choices are migrated automatically (default: Opus). Re-run the skills update if prompted.",
+        ],
+      },
+    ],
+  },
+  {
     version: "0.7.1",
     date: "2026-10-20",
     sections: [

@@ -1,6 +1,6 @@
 # Personal Aierbaer — Agent Guide
 
-Local-first macOS app that watches a ClickUp support inbox, runs a local **pi**
+Local-first macOS app that watches a ClickUp support inbox, runs a local **Claude Code**
 agent to draft solution reports, records the real resolution per ticket, and
 exposes a local HTTP API + deep links so other tools can drive it.
 
@@ -11,15 +11,15 @@ Bundle id `com.aierbaer.personal`. URL scheme `aierbaer://`.
 
 - **Shell:** Tauri v2 (Rust). Entry `src-tauri/src/lib.rs` (`run()`), `main.rs` calls it.
 - **UI:** React 19 + Vite + TypeScript, plain CSS in `src/styles.css` (theme vars, dark default + `[data-theme="light"]`).
-- **Model:** local-first, **GitHub Copilot only** for v1 (`github-copilot/claude-opus-4.8` default).
-- **pi:** user-installed global CLI, spawned as a child process. Not bundled.
+- **Model:** local-first, your **Claude subscription** via Claude Code. Aliases `opus` (default) / `sonnet` / `haiku`.
+- **Claude Code:** user-installed `claude` CLI (wizard runs the native installer), spawned headless (`claude -p`). Not bundled.
 - No test suite yet. Verify with `npm run build` (tsc+vite) and `cargo build`.
 
 ## Commands (Makefile)
 
 - `make dev` → `npm run tauri dev`.
 - `make fresh` → sandboxed onboarding test (see `test-onboarding.sh`): temp HOME +
-  npm prefix so pi/skill/Copilot all read as missing; wipes WebKit localStorage so
+  npm prefix so claude/skill/sign-in all read as missing; wipes WebKit localStorage so
   the wizard re-runs. Real setup untouched.
 - `make deploy` → build `.app`, copy to `/Applications`, re-register `aierbaer://`
   with LaunchServices. **Deep links only work from the built app**, not `tauri dev`.
@@ -34,17 +34,16 @@ src/
   inbox/Inbox.tsx         mail-style split, keyboard shortcuts, search, hide-resolved, footer
   inbox/ReportPane.tsx    report as section-card form, section nav, resolution form
   inbox/Settings.tsx      sectioned Preferences modal (ClickUp / Repo+Reports / Skills / Local API / Release notes)
-  onboarding/Wizard.tsx   6 steps: pi, skill, Copilot, model+test, repo, ClickUp
+  onboarding/Wizard.tsx   5 steps: Claude Code (install+sign-in), skill, model+test, repo, ClickUp
   components/StatusBar.tsx footer legend (Keys renders + between modifier combos), right slot
   lib/api.ts              all invoke() wrappers + localStorage helpers
   lib/releaseNotes.ts     version history; APP_VERSION = RELEASES[0].version
 src-tauri/src/
   lib.rs      commands + setup (manages ConfigState, ServerState; deep-link handler)
   clickup.rs  fetch_tasks, fetch_task_detail, fetch_teams, fetch_owner_options
-  pi.rs       run_solve (spawns pi in the repo cwd, streams pi-output/pi-done), run_test
+  claude.rs   run_solve (spawns `claude -p` in the repo cwd, streams solve-progress/solve-done), run_test
   reports.rs  find/list reports, upsert/remove Resolution, list_meta
-  doctor.rs   check_pi/skill/copilot, install_pi/install_skill (writes BOTH skills), bundled skill consts
-  copilot.rs  in-app GitHub device-code OAuth → writes ~/.pi/agent/auth.json
+  doctor.rs   check_claude/skill, install_claude/install_skill (writes BOTH skills), bundled skill consts
   api.rs      axum HTTP server (see API), RuntimeConfig, ApiSettings (port+token), ServerState
   assets/clickup-aierbaer-solve/SKILL.md   bundled via include_str!
   assets/aierbaer-api/SKILL.md             bundled via include_str!
@@ -53,7 +52,7 @@ src-tauri/src/
 ## Skills
 
 Two bundled skills, installed to `~/.claude/skills/` (respects `$HOME`):
-- **clickup-aierbaer-solve** — how pi analyzes a ticket + writes the report;
+- **clickup-aierbaer-solve** — how Claude analyzes a ticket + writes the report;
   searches the reports dir for prior solutions, prefers ones with `## Resolution`.
 - **aierbaer-api** — documents the HTTP API for external coding agents. Reads token
   from `$AIERBAER_TOKEN`/`$AIERBAER_PORT` or falls back to the app config file.
@@ -65,9 +64,11 @@ The user's separate `clickup-solve` skill (other project) must stay untouched.
 
 ## Solve flow & storage
 
-- Solve spawns `pi --print --model <m> --skill clickup-aierbaer-solve` with cwd =
-  the Eversports repo. Prompt includes the context file, the reports dir, and the
-  output path. Streams `pi-output` (per line) / `pi-done` events.
+- Solve spawns `claude -p --output-format stream-json --model <m>` with cwd = the
+  Eversports repo; prompt names the `clickup-aierbaer-solve` skill, the context file,
+  reports dir and output path. `--allowedTools` whitelist (headless, no prompts),
+  `--add-dir` for reports dir + temp. Streams `solve-progress` / `solve-done` events.
+  Report must exist after exit or the solve counts as failed.
 - Reports: `<reportsDir>/YYYY-MM-DD-clickup-<taskId>.md`. Default reports dir
   `~/Documents/Personal Aierbaer/Reports`; configurable in Settings.
 - New unsolved tickets **auto-solve** once (App gates on report metadata; `attempted`
@@ -130,8 +131,8 @@ Footer legend is context-aware (`StatusBar` + `Keys`; combos joined with `+`).
 - `data-tauri-drag-region` needs `core:window:allow-start-dragging` (in capabilities).
 - macOS WKWebView localStorage lives under `~/Library/WebKit/personal-aierbaer`,
   NOT the sandbox `$HOME` — `test-onboarding.sh` wipes it to force the wizard.
-- Copilot auth is replicated in `copilot.rs` (client id, token exchange). If pi
-  changes its flow, this may need updating.
+- Legacy `aierbaer.model` values like `github-copilot/…` are migrated to `opus` in
+  `loadModel()` (and Rust falls back to `opus` for ids containing `/`).
 
 ## Deferred / next ideas
 

@@ -250,7 +250,7 @@ export function Settings({ initial, onSave, onCancel }: Props) {
             {section === "solving" && (
               <>
                 <h2>Repository & Reports</h2>
-                <p className="prefs-lead">The pi agent runs inside the repo; reports are stored in the reports folder.</p>
+                <p className="prefs-lead">Claude Code runs inside the repo; reports are stored in the reports folder.</p>
                 <label>
                   Eversports repository
                   <button className="wiz-btn" onClick={chooseRepo}>{repo ? "Change folder…" : "Choose folder…"}</button>
@@ -275,11 +275,11 @@ export function Settings({ initial, onSave, onCancel }: Props) {
               <>
                 <h2>Skills</h2>
                 <p className="prefs-lead">
-                  Skills are instruction files the local pi agent loads to do its job. Aierbaer installs two into ~/.claude/skills.
+                  Skills are instruction files Claude Code loads to do its job. Aierbaer installs two into ~/.claude/skills.
                 </p>
                 <ul className="prefs-skill-list">
                   <li>
-                    <b>clickup-aierbaer-solve</b> — teaches pi how to analyze a ticket and write a structured solution
+                    <b>clickup-aierbaer-solve</b> — teaches Claude how to analyze a ticket and write a structured solution
                     report. It searches your reports folder for similar past tickets and reuses their recorded
                     resolutions, so solutions get better over time.
                   </li>
@@ -322,7 +322,7 @@ export function Settings({ initial, onSave, onCancel }: Props) {
                 <div className="notify-row">
                   <div>
                     <div className="notify-title">New solutions</div>
-                    <div className="notify-sub">When the pi agent finishes a report.</div>
+                    <div className="notify-sub">When Claude finishes a report.</div>
                   </div>
                   <button className={`switch-btn ${notifySolutions ? "on" : ""}`} onClick={toggleSolutions}>
                     <span className="switch"><span className="knob" /></span>

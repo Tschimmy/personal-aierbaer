@@ -42,12 +42,12 @@ fn render_context(d: &ClickUpTaskDetail) -> String {
     )
 }
 
-/// PATH augmentation so we find a user-installed `pi` (npm global / homebrew /
-/// nvm / fnm / volta). Delegates to the shared login-shell resolver.
+/// PATH augmentation so we find a user-installed `claude` (~/.local/bin /
+/// homebrew / npm global). Delegates to the shared login-shell resolver.
 use crate::env_path::augmented_path;
 
 /// A guaranteed-valid working directory for spawned children. If the app's own
-/// cwd was deleted/unmounted, inheriting it makes `pi` crash at startup with
+/// cwd was deleted/unmounted, inheriting it makes the CLI crash at startup with
 /// `EPERM: operation not permitted, uv_cwd` before it runs. Fall back to HOME,
 /// then the temp dir, then "/".
 fn safe_cwd() -> PathBuf {
@@ -75,9 +75,9 @@ fn dirs_home() -> Option<PathBuf> {
 use std::collections::HashSet;
 use std::sync::{Arc, Mutex, OnceLock};
 
-/// Registry of live pi child PIDs so we can kill leftovers when the app quits.
+/// Registry of live claude child PIDs so we can kill leftovers when the app quits.
 /// Without this, a solve in flight when the app closes is reparented to launchd
-/// and leaks (orphaned `pi` processes under `ppid 1`).
+/// and leaks (orphaned `claude` processes under `ppid 1`).
 static CHILDREN: OnceLock<Arc<Mutex<HashSet<u32>>>> = OnceLock::new();
 
 fn registry() -> &'static Arc<Mutex<HashSet<u32>>> {
@@ -96,9 +96,9 @@ fn unregister(pid: u32) {
     }
 }
 
-/// Kill every still-running pi child and its process group. Called on app exit so
+/// Kill every still-running claude child and its process group. Called on app exit so
 /// no solve is left orphaned. Negative pid targets the whole group, taking down
-/// the bash/grep helpers pi spawned too.
+/// the bash/grep helpers claude spawned too.
 pub fn kill_all() {
     let pids: Vec<u32> = registry()
         .lock()
@@ -135,49 +135,76 @@ fn tool_label(name: &str, args: &serde_json::Value) -> String {
             if cmd.is_empty() { "Running a command…".into() } else { format!("Running: {}", short(cmd, 60)) }
         }
         "read" => {
-            let p = a("path");
+            let p = a("file_path");
             if p.is_empty() { "Reading a file…".into() } else { format!("Reading {}", basename(p)) }
         }
         "write" => "Writing the report…".into(),
         "edit" => {
-            let p = a("path");
+            let p = a("file_path");
             if p.is_empty() { "Editing a file…".into() } else { format!("Editing {}", basename(p)) }
         }
         "grep" | "glob" => {
-            let pat = if !a("pattern").is_empty() { a("pattern") } else { a("query") };
+            let pat = a("pattern");
             if pat.is_empty() { "Searching the codebase…".into() } else { format!("Searching for \"{}\"", short(pat, 40)) }
         }
-        "list" | "ls" => "Listing files…".into(),
+        "skill" => "Loading the solve skill…".into(),
+        "task" | "agent" => "Delegating to a helper…".into(),
         other => format!("Using {other}…"),
     }
 }
 
-/// Derive a short progress label from one pi `--mode json` event, or None if the
-/// event isn't worth surfacing.
-fn progress_label(v: &serde_json::Value) -> Option<String> {
+/// Derive short progress labels from one `--output-format stream-json` event.
+/// An assistant message can carry several content blocks, so this returns a list.
+fn progress_labels(v: &serde_json::Value) -> Vec<String> {
     match v.get("type").and_then(|t| t.as_str()) {
-        Some("agent_start") => Some("Starting up…".into()),
-        Some("tool_execution_start") => {
-            let name = v.get("toolName").and_then(|n| n.as_str()).unwrap_or("tool");
-            let args = v.get("args").cloned().unwrap_or(serde_json::Value::Null);
-            Some(tool_label(name, &args))
+        Some("system") if v.get("subtype").and_then(|t| t.as_str()) == Some("init") => {
+            vec!["Starting up…".into()]
         }
-        Some("message_update") => match v
-            .get("assistantMessageEvent")
-            .and_then(|e| e.get("type"))
-            .and_then(|t| t.as_str())
-        {
-            Some("thinking_start") => Some("Thinking…".into()),
-            Some("text_start") => Some("Writing the report…".into()),
-            _ => None,
-        },
-        Some("agent_end") => Some("Finishing up…".into()),
-        _ => None,
+        Some("assistant") => v
+            .pointer("/message/content")
+            .and_then(|c| c.as_array())
+            .map(|blocks| {
+                blocks
+                    .iter()
+                    .filter_map(|b| match b.get("type").and_then(|t| t.as_str()) {
+                        Some("thinking") => Some("Thinking…".to_string()),
+                        Some("text") => Some("Writing the report…".to_string()),
+                        Some("tool_use") => {
+                            let name = b.get("name").and_then(|n| n.as_str()).unwrap_or("tool");
+                            let input = b.get("input").cloned().unwrap_or(serde_json::Value::Null);
+                            Some(tool_label(name, &input))
+                        }
+                        _ => None,
+                    })
+                    .collect()
+            })
+            .unwrap_or_default(),
+        Some("result") => vec!["Finishing up…".into()],
+        _ => vec![],
     }
 }
 
-/// Spawn `pi` with the clickup-aierbaer-solve skill. Streams progress steps to the
-/// frontend via the `pi-progress` event, writes the report to `report_path`.
+/// Tools the solver may use without a prompt. Headless `-p` has nobody to approve,
+/// so anything not listed here is denied. Read-only analysis plus Write for the report.
+const ALLOWED_TOOLS: &[&str] = &[
+    "Read",
+    "Write",
+    "Grep",
+    "Glob",
+    "Skill",
+    "Bash(rg:*)",
+    "Bash(grep:*)",
+    "Bash(find:*)",
+    "Bash(cat:*)",
+    "Bash(ls:*)",
+    "Bash(jq:*)",
+    "Bash(curl:*)",
+    "Bash(mysql:*)",
+];
+
+/// Spawn headless `claude -p` with the clickup-aierbaer-solve skill. Streams
+/// progress steps to the frontend via the `solve-progress` event, writes the
+/// report to `report_path`.
 pub async fn run_solve(
     app: &AppHandle,
     detail: &ClickUpTaskDetail,
@@ -194,38 +221,46 @@ pub async fn run_solve(
     let report_path = reports_dir.join(format!("{date}-clickup-{}.md", detail.id));
 
     let prompt = format!(
-        "Analyze the ClickUp task described in the context file and propose solutions. \
-Before analyzing from scratch, search the existing reports directory for prior solutions to \
-similar or identical issues and reuse/reference them when they apply — especially reports that \
-contain a '## Resolution' section, which records the actual fix that worked. \
+        "Use the clickup-aierbaer-solve skill. Analyze the ClickUp task described in the context file \
+and propose solutions. Before analyzing from scratch, search the existing reports directory for prior \
+solutions to similar or identical issues and reuse/reference them when they apply — especially reports \
+that contain a '## Resolution' section, which records the actual fix that worked. \
 Context file: {}. Existing reports directory: {}. Write the report to: {}",
         context_path.display(),
         reports_dir.display(),
         report_path.display()
     );
 
-    let mut command = Command::new("pi");
+    let mut command = Command::new("claude");
     command
         .args([
-            "--print",
-            "--mode",
-            "json",
+            "-p",
+            "--output-format",
+            "stream-json",
+            "--verbose",
+            "--no-session-persistence",
             "--model",
             model,
-            "--skill",
-            "clickup-aierbaer-solve",
-            &prompt,
+            "--allowedTools",
+            &ALLOWED_TOOLS.join(","),
+            // Reports dir + the temp context file live outside the repo cwd.
+            "--add-dir",
         ])
+        .arg(reports_dir)
+        .arg("--add-dir")
+        .arg(std::env::temp_dir())
+        .arg("--")
+        .arg(&prompt)
         .env("PATH", augmented_path())
+        .stdin(Stdio::null())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
-        // Own process group so kill_all can take down pi + its bash/grep helpers.
+        // Own process group so kill_all can take down claude + its bash/grep helpers.
         .process_group(0)
-        // Kill pi if this future is dropped (e.g. solve cancelled).
+        // Kill claude if this future is dropped (e.g. solve cancelled).
         .kill_on_drop(true);
     // Run the agent inside the target repo so its tools see that codebase.
-    // Always pin a valid cwd: inheriting a deleted app cwd makes pi crash with
-    // `EPERM uv_cwd` at startup.
+    // Always pin a valid cwd: inheriting a deleted app cwd crashes at startup.
     let mut cwd_set = false;
     if let Some(dir) = repo {
         if !dir.is_empty() {
@@ -249,31 +284,44 @@ Context file: {}. Existing reports directory: {}. Write the report to: {}",
 
     let task_id = detail.id.clone();
 
-    // Parse pi's json event stream into human progress steps. Only emit when the
-    // label changes, so the UI shows the current step without flicker.
+    // Parse the json event stream into human progress steps. Only emit when the
+    // label changes, so the UI shows the current step without flicker. The final
+    // `result` event carries the error text when the run failed.
+    let result_err = Arc::new(Mutex::new(None::<String>));
+    let mut stdout_task = None;
     if let Some(stdout) = child.stdout.take() {
         let mut lines = BufReader::new(stdout).lines();
         let app2 = app.clone();
         let tid = task_id.clone();
-        tokio::spawn(async move {
+        let result_err = result_err.clone();
+        stdout_task = Some(tokio::spawn(async move {
             let mut last = String::new();
             while let Ok(Some(line)) = lines.next_line().await {
                 let Ok(v) = serde_json::from_str::<serde_json::Value>(&line) else { continue };
-                if let Some(step) = progress_label(&v) {
+                if v.get("type").and_then(|t| t.as_str()) == Some("result")
+                    && v.get("is_error").and_then(|e| e.as_bool()) == Some(true)
+                {
+                    if let Some(msg) = v.get("result").and_then(|r| r.as_str()) {
+                        if let Ok(mut e) = result_err.lock() {
+                            *e = Some(msg.to_string());
+                        }
+                    }
+                }
+                for step in progress_labels(&v) {
                     if step != last {
                         last = step.clone();
                         let _ = app2.emit(
-                            "pi-progress",
+                            "solve-progress",
                             serde_json::json!({ "taskId": tid, "step": step }),
                         );
                     }
                 }
             }
-        });
+        }));
     }
 
     // Drain stderr concurrently: without this the pipe buffer can fill and hang
-    // pi. Keep the lines for the error message.
+    // the child. Keep the lines for the error message.
     let stderr_buf = Arc::new(Mutex::new(Vec::<String>::new()));
     if let Some(stderr) = child.stderr.take() {
         let mut lines = BufReader::new(stderr).lines();
@@ -291,9 +339,15 @@ Context file: {}. Existing reports directory: {}. Write the report to: {}",
     if let Some(pid) = pid {
         unregister(pid);
     }
+    // Let the stdout reader finish so the `result` error text is captured.
+    if let Some(t) = stdout_task {
+        let _ = t.await;
+    }
+    let reported = report_path.is_file();
+    let ok = status.success() && reported;
     let _ = app.emit(
-        "pi-done",
-        serde_json::json!({ "taskId": task_id, "ok": status.success(), "report": report_path.to_string_lossy() }),
+        "solve-done",
+        serde_json::json!({ "taskId": task_id, "ok": ok, "report": report_path.to_string_lossy() }),
     );
 
     if !status.success() {
@@ -301,32 +355,42 @@ Context file: {}. Existing reports directory: {}. Write the report to: {}",
             .lock()
             .map(|b| b.join("\n"))
             .unwrap_or_default();
-        let detail = stderr.trim();
+        let from_result = result_err.lock().ok().and_then(|e| e.clone()).unwrap_or_default();
+        let detail = if stderr.trim().is_empty() { from_result } else { stderr };
+        let detail = detail.trim();
         if detail.is_empty() {
-            return Err(anyhow::anyhow!("pi exited with status {:?}", status.code()));
+            return Err(anyhow::anyhow!("claude exited with status {:?}", status.code()));
         }
         return Err(anyhow::anyhow!(
-            "pi exited with status {:?}: {}",
+            "claude exited with status {:?}: {}",
             status.code(),
             detail
+        ));
+    }
+    if !reported {
+        return Err(anyhow::anyhow!(
+            "claude finished but wrote no report to {}",
+            report_path.display()
         ));
     }
     Ok(report_path)
 }
 
-/// Quick smoke test: run pi once with a trivial prompt and return its stdout.
+/// Quick smoke test: run claude once with a trivial prompt and return its stdout.
 /// Empty/err stdout means the agent didn't respond.
 pub async fn run_test(model: &str) -> Result<String, String> {
-    let out = Command::new("pi")
+    let out = Command::new("claude")
         .args([
-            "--print",
+            "-p",
+            "--no-session-persistence",
             "--model",
             model,
             "Reply with exactly: Hello World",
         ])
         .env("PATH", augmented_path())
-        // Pin a valid cwd so pi doesn't crash with `EPERM uv_cwd` if the app's
-        // own working directory was deleted/unmounted.
+        .stdin(Stdio::null())
+        // Pin a valid cwd so claude doesn't crash if the app's own working
+        // directory was deleted/unmounted.
         .current_dir(safe_cwd())
         .output()
         .await
@@ -334,6 +398,11 @@ pub async fn run_test(model: &str) -> Result<String, String> {
     if out.status.success() {
         Ok(String::from_utf8_lossy(&out.stdout).trim().to_string())
     } else {
-        Err(String::from_utf8_lossy(&out.stderr).trim().to_string())
+        let err = String::from_utf8_lossy(&out.stderr).trim().to_string();
+        if err.is_empty() {
+            Err(String::from_utf8_lossy(&out.stdout).trim().to_string())
+        } else {
+            Err(err)
+        }
     }
 }

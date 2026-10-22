@@ -1,9 +1,8 @@
 mod api;
 mod clickup;
-mod copilot;
 mod doctor;
 mod env_path;
-mod pi;
+mod claude;
 mod reports;
 mod update;
 
@@ -42,7 +41,7 @@ async fn fetch_task_detail(token: String, task_id: String) -> Result<ClickUpTask
         .map_err(|e| e.to_string())
 }
 
-/// Run the pi solve for a task. Streams `pi-output` events; resolves to report path.
+/// Run the claude solve for a task. Streams `solve-progress` events; resolves to report path.
 #[tauri::command]
 async fn solve_task(
     app: AppHandle,
@@ -56,8 +55,8 @@ async fn solve_task(
         .await
         .map_err(|e| e.to_string())?;
     let dir = resolve_reports_dir(&app, reports_dir);
-    let model = model.unwrap_or_else(|| "github-copilot/claude-opus-4.8".into());
-    let path = pi::run_solve(&app, &detail, &dir, &model, repo.as_deref())
+    let model = model.filter(|m| !m.contains('/')).unwrap_or_else(|| "opus".into());
+    let path = claude::run_solve(&app, &detail, &dir, &model, repo.as_deref())
         .await
         .map_err(|e| e.to_string())?;
     Ok(path.to_string_lossy().to_string())
@@ -140,18 +139,13 @@ async fn read_report(path: String) -> Result<String, String> {
 }
 
 #[tauri::command]
-async fn check_pi() -> doctor::PiStatus {
-    doctor::check_pi().await
+async fn check_claude() -> doctor::ClaudeStatus {
+    doctor::check_claude().await
 }
 
 #[tauri::command]
 async fn check_skill() -> doctor::SkillStatus {
     doctor::check_skill().await
-}
-
-#[tauri::command]
-async fn check_copilot() -> doctor::CopilotStatus {
-    doctor::check_copilot().await
 }
 
 #[tauri::command]
@@ -196,8 +190,8 @@ fn open_terminal(command: String) -> Result<(), String> {
 }
 
 #[tauri::command]
-async fn install_pi() -> Result<(), String> {
-    doctor::install_pi().await
+async fn install_claude() -> Result<(), String> {
+    doctor::install_claude().await
 }
 
 #[tauri::command]
@@ -206,18 +200,8 @@ async fn install_skill() -> Result<(), String> {
 }
 
 #[tauri::command]
-async fn copilot_login(app: AppHandle) -> Result<(), String> {
-    copilot::login(&app).await.map_err(|e| e.to_string())
-}
-
-#[tauri::command]
-async fn copilot_models() -> Result<Vec<String>, String> {
-    copilot::available_models().await.map_err(|e| e.to_string())
-}
-
-#[tauri::command]
-async fn test_pi(model: String) -> Result<String, String> {
-    pi::run_test(&model).await
+async fn test_claude(model: String) -> Result<String, String> {
+    claude::run_test(&model).await
 }
 
 #[tauri::command]
@@ -305,19 +289,16 @@ pub fn run() {
             fetch_task_detail,
             solve_task,
             read_report,
-            check_pi,
+            check_claude,
             check_skill,
-            check_copilot,
             open_terminal,
             set_runtime_config,
             get_api_settings,
             set_api_port,
             regenerate_api_token,
-            install_pi,
+            install_claude,
             install_skill,
-            copilot_login,
-            copilot_models,
-            test_pi,
+            test_claude,
             fetch_teams,
             fetch_owner_options,
             read_report_for,
@@ -332,9 +313,9 @@ pub fn run() {
         .build(tauri::generate_context!())
         .expect("error while building Personal Aierbaer")
         .run(|_app, event| {
-            // Kill any in-flight pi solves so nothing is left orphaned on quit.
+            // Kill any in-flight claude solves so nothing is left orphaned on quit.
             if let tauri::RunEvent::Exit = event {
-                pi::kill_all();
+                claude::kill_all();
             }
         });
 }

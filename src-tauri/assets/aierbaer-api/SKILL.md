@@ -1,6 +1,6 @@
 ---
 name: aierbaer-api
-version: 1.1.0
+version: 1.1.1
 description: "Interact with the Personal Aierbaer desktop app over its local HTTP API: list the ClickUp support inbox, read solution reports, read/set/remove a ticket's resolution, and trigger a solve. Use when the user asks to check the Aierbaer inbox, get a ticket's report or solution, mark a ticket solved with an option, or kick off solving a ClickUp ticket from a coding agent or their own dashboard."
 allowed-tools: Bash(curl:*), Bash(jq:*)
 user-invocable: true
@@ -9,7 +9,7 @@ user-invocable: true
 # Personal Aierbaer API Skill
 
 Personal Aierbaer is a local-first macOS app that watches a ClickUp support inbox,
-runs a local pi agent to draft solution reports, and records the actual
+runs a local Claude Code agent to draft solution reports, and records the actual
 resolution per ticket. While the app is open it exposes a local HTTP API so you
 can drive it from any coding agent or dashboard.
 
@@ -81,7 +81,7 @@ Returns `{ resolved, choice, notes }`.
 ```bash
 curl -s "${AUTH[@]}" -X POST "$BASE/api/solve/<TASK_ID>"
 ```
-Returns `202 Accepted` and runs the pi agent in the background. Poll the report
+Returns `202 Accepted` and runs the Claude Code agent in the background. Poll the report
 endpoint until `markdown` is populated:
 ```bash
 until curl -s "${AUTH[@]}" "$BASE/api/report/<TASK_ID>" | jq -e '.markdown != null' >/dev/null; do sleep 3; done

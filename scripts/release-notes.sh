@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Have a pi agent write the release notes for a version, based on the changes
+# Have a Claude Code agent write the release notes for a version, based on the changes
 # since the last release tag, editing src/lib/releaseNotes.ts + CHANGELOG.md.
 # No-op if an entry for the version already exists.
 set -euo pipefail
@@ -17,7 +17,7 @@ today=$(date +%Y-%m-%d)
 log=$(git log ${range:-} --oneline 2>/dev/null || true)
 stat=$(git diff ${range:-} --stat 2>/dev/null | tail -60 || true)
 
-echo "Generating release notes for v$VER with pi..."
+echo "Generating release notes for v$VER with Claude Code..."
 
 prompt=$(cat <<EOF
 Write user-facing release notes for version $VER (date $today) of this app and
@@ -44,10 +44,10 @@ Do not modify anything else. Do not bump version numbers. Keep it concise.
 EOF
 )
 
-pi --print --model github-copilot/claude-opus-4.8 "$prompt" >/dev/null 2>&1 || true
+claude -p --no-session-persistence --model opus --permission-mode acceptEdits --allowedTools "Read,Edit" "$prompt" </dev/null >/dev/null 2>&1 || true
 
 if ! grep -q "version: \"$VER\"" src/lib/releaseNotes.ts 2>/dev/null; then
-  echo "pi did not add a v$VER entry to src/lib/releaseNotes.ts" >&2
+  echo "claude did not add a v$VER entry to src/lib/releaseNotes.ts" >&2
   exit 1
 fi
 echo "release notes for v$VER written"

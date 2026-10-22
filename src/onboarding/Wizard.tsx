@@ -1,21 +1,18 @@
 import { useEffect, useState } from "react";
 import { open as openUrl } from "@tauri-apps/plugin-shell";
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
-import { listen } from "@tauri-apps/api/event";
 import {
-  checkPi,
+  checkClaude,
   checkSkill,
-  checkCopilot,
-  copilotLogin,
-  copilotModels,
-  testPi,
+  testClaude,
   loadModel,
   saveModel,
   loadRepo,
   saveRepo,
-  pickDefaultModel,
-  installPi,
+  MODELS,
+  installClaude,
   installSkill,
+  openTerminal,
   fetchTeams,
   fetchOwnerOptions,
   saveClickupCache,
@@ -25,9 +22,8 @@ import {
   DEFAULT_OWNER_FIELD_ID,
   DEFAULT_OWNER_VALUE,
   type ClickUpConfig,
-  type PiStatus,
+  type ClaudeStatus,
   type SkillStatus,
-  type CopilotStatus,
   type Team,
   type OwnerOption,
 } from "../lib/api";
@@ -38,21 +34,20 @@ interface Props {
   onDone: (cfg: ClickUpConfig) => void;
 }
 
-const STEPS = 6;
+const STEPS = 5;
 
-/** Freeform-style wizard: pi → skill → Copilot → model+test → repo → ClickUp.
+/** Freeform-style wizard: Claude Code → skill → model+test → repo → ClickUp.
  *  Each step self-checks and offers a fix action when the check fails. */
 export function Wizard({ onDone }: Props) {
   const [step, setStep] = useState(0);
   return (
     <div className="wiz-backdrop">
       <div className="wiz-card">
-        {step === 0 && <PiStep onNext={() => setStep(1)} />}
+        {step === 0 && <ClaudeStep onNext={() => setStep(1)} />}
         {step === 1 && <SkillStep onBack={() => setStep(0)} onNext={() => setStep(2)} />}
-        {step === 2 && <CopilotStep onBack={() => setStep(1)} onNext={() => setStep(3)} />}
-        {step === 3 && <ModelStep onBack={() => setStep(2)} onNext={() => setStep(4)} />}
-        {step === 4 && <RepoStep onBack={() => setStep(3)} onNext={() => setStep(5)} />}
-        {step === 5 && <ClickUpStep onBack={() => setStep(4)} onDone={onDone} />}
+        {step === 2 && <ModelStep onBack={() => setStep(1)} onNext={() => setStep(3)} />}
+        {step === 3 && <RepoStep onBack={() => setStep(2)} onNext={() => setStep(4)} />}
+        {step === 4 && <ClickUpStep onBack={() => setStep(3)} onDone={onDone} />}
         <Dots active={step} total={STEPS} />
       </div>
     </div>
@@ -73,33 +68,47 @@ function Bear() {
   return <img src="/icon.png" className="wiz-icon" alt="Personal Aierbaer" />;
 }
 
-function PiStep({ onNext }: { onNext: () => void }) {
+function ClaudeStep({ onNext }: { onNext: () => void }) {
   const [state, setState] = useState<StepState>("checking");
-  const [pi, setPi] = useState<PiStatus | null>(null);
+  const [cc, setCc] = useState<ClaudeStatus | null>(null);
   const [installing, setInstalling] = useState(false);
+  const [waitingLogin, setWaitingLogin] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const run = () => {
     setState("checking");
-    checkPi().then((s) => {
-      setPi(s);
-      setState(s.installed ? "ok" : "missing");
+    return checkClaude().then((s) => {
+      setCc(s);
+      setState(s.installed && s.logged_in ? "ok" : "missing");
+      if (s.logged_in) setWaitingLogin(false);
+      return s;
     });
   };
-  useEffect(run, []);
+  useEffect(() => {
+    run();
+  }, []);
+
+  // After opening the login Terminal, poll until the sign-in lands.
+  useEffect(() => {
+    if (!waitingLogin) return;
+    const t = setInterval(() => {
+      checkClaude().then((s) => {
+        if (s.logged_in) {
+          setCc(s);
+          setState("ok");
+          setWaitingLogin(false);
+        }
+      });
+    }, 2000);
+    return () => clearInterval(t);
+  }, [waitingLogin]);
 
   const install = async () => {
     setInstalling(true);
     setError(null);
     try {
-      await installPi();
-      await new Promise<void>((resolve) => {
-        checkPi().then((s) => {
-          setPi(s);
-          setState(s.installed ? "ok" : "missing");
-          resolve();
-        });
-      });
+      await installClaude();
+      await run();
     } catch (e) {
       setError(String(e));
     } finally {
@@ -107,27 +116,55 @@ function PiStep({ onNext }: { onNext: () => void }) {
     }
   };
 
+  const login = async () => {
+    setError(null);
+    try {
+      await openTerminal("claude auth login");
+      setWaitingLogin(true);
+    } catch (e) {
+      setError(String(e));
+    }
+  };
+
   return (
     <>
       <Bear />
-      <h1>The pi agent</h1>
+      <h1>Claude Code</h1>
       <p className="wiz-lead">
-        Personal Aierbaer runs a local <b>pi</b> agent on your Mac to read each
-        ClickUp ticket and draft a solution — using your own Copilot auth.
-        Nothing leaves your machine except the ClickUp calls you already make.
+        Personal Aierbaer runs <b>Claude Code</b> on your Mac to read each ClickUp
+        ticket and draft a solution — using your own Claude subscription. Nothing
+        leaves your machine except the ClickUp calls you already make.
       </p>
 
-      {state === "checking" && <div className="wiz-status checking">Checking for pi…</div>}
+      {state === "checking" && <div className="wiz-status checking">Checking for Claude Code…</div>}
       {state === "ok" && (
-        <div className="wiz-status ok">✓ pi installed{pi?.version ? ` — ${pi.version}` : ""}</div>
+        <div className="wiz-status ok">
+          ✓ Claude Code ready{cc?.version ? ` — ${cc.version}` : ""}
+          {cc?.email ? ` · ${cc.email}` : ""}
+        </div>
       )}
-      {state === "missing" && (
+      {state === "missing" && cc && !cc.installed && (
         <div className="wiz-status missing">
-          <div>pi not found on your PATH.</div>
+          <div>Claude Code not found on your PATH.</div>
           {error && <div className="err-text">{error}</div>}
           <button className="fix" disabled={installing} onClick={install}>
             {installing ? <><span className="spinner" /> Installing…</> : "Install"}
           </button>
+        </div>
+      )}
+      {state === "missing" && cc && cc.installed && (
+        <div className="wiz-status missing">
+          <div>Not signed in. Sign in with your Claude subscription.</div>
+          {error && <div className="err-text">{error}</div>}
+          {waitingLogin ? (
+            <div className="device-wait">
+              <span className="spinner" /> Finish sign-in in the Terminal window…
+            </div>
+          ) : (
+            <button className="fix" onClick={login}>
+              Sign in
+            </button>
+          )}
         </div>
       )}
 
@@ -180,8 +217,8 @@ function SkillStep({ onBack, onNext }: { onBack: () => void; onNext: () => void 
       <Bear />
       <h1>The Aierbaer skills</h1>
       <p className="wiz-lead">
-        Skills are instruction files the local pi agent loads to do its job. Aierbaer
-        installs two: <b>clickup-aierbaer-solve</b> teaches pi how to analyze a ticket
+        Skills are instruction files Claude Code loads to do its job. Aierbaer
+        installs two: <b>clickup-aierbaer-solve</b> teaches Claude how to analyze a ticket
         and write a structured solution report — reusing your past resolutions so it
         improves over time — and <b>aierbaer-api</b> lets other coding agents drive
         Aierbaer over its local API.
@@ -226,156 +263,14 @@ function SkillStep({ onBack, onNext }: { onBack: () => void; onNext: () => void 
   );
 }
 
-function CopilotStep({ onBack, onNext }: { onBack: () => void; onNext: () => void }) {
-  const [state, setState] = useState<StepState>("checking");
-  const [cop, setCop] = useState<CopilotStatus | null>(null);
-  const [authorizing, setAuthorizing] = useState(false);
-  const [device, setDevice] = useState<{ userCode: string; verificationUri: string } | null>(null);
-  const [copied, setCopied] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const run = () => {
-    setState("checking");
-    checkCopilot().then((s) => {
-      setCop(s);
-      setState(s.ready ? "ok" : "missing");
-    });
-  };
-  useEffect(run, []);
-
-  const signIn = async () => {
-    setError(null);
-    setAuthorizing(true);
-    setDevice(null);
-    // Show the code + auto-open the browser as soon as the device flow starts.
-    const un = await listen<{ userCode: string; verificationUri: string }>(
-      "copilot-device",
-      (e) => {
-        setDevice(e.payload);
-        openUrl(e.payload.verificationUri);
-      }
-    );
-    try {
-      await copilotLogin();
-      await new Promise<void>((resolve) => {
-        checkCopilot().then((s) => {
-          setCop(s);
-          setState(s.ready ? "ok" : "missing");
-          resolve();
-        });
-      });
-    } catch (e) {
-      setError(String(e));
-    } finally {
-      un();
-      setAuthorizing(false);
-      setDevice(null);
-    }
-  };
-
-  return (
-    <>
-      <Bear />
-      <h1>GitHub Copilot auth</h1>
-      <p className="wiz-lead">
-        To read a ticket and write a report, the local pi agent needs a language
-        model. Instead of a separate paid API key, Aierbaer uses your existing{" "}
-        <b>GitHub Copilot</b> subscription as that model — so solving costs you
-        nothing extra. Sign in once to let pi use it; Aierbaer never sees your
-        token, it just asks the local agent to use it.
-      </p>
-
-      {state === "checking" && <div className="wiz-status checking">Checking Copilot auth…</div>}
-      {state === "ok" && (
-        <div className="wiz-status ok">
-          ✓ Copilot ready{cop?.auth_type ? ` — ${cop.auth_type}` : ""}
-        </div>
-      )}
-      {state === "missing" && !authorizing && (
-        <div className="wiz-status missing">
-          <div>Copilot not connected yet.</div>
-          {error && <div className="err-text">{error}</div>}
-          <button className="fix" onClick={signIn}>
-            Sign in with GitHub
-          </button>
-        </div>
-      )}
-
-      {authorizing && (
-        <div className="device-box">
-          {device ? (
-            <>
-              <div className="device-label">Enter this code at GitHub</div>
-              <div className="device-code-row">
-                <span className="device-code">{device.userCode}</span>
-                <button
-                  className="copy-btn"
-                  onClick={async () => {
-                    try {
-                      await navigator.clipboard.writeText(device.userCode);
-                      setCopied(true);
-                      setTimeout(() => setCopied(false), 1500);
-                    } catch {
-                      /* clipboard blocked — ignore */
-                    }
-                  }}
-                >
-                  {copied ? "Copied" : "Copy"}
-                </button>
-              </div>
-              <button className="inline-link" onClick={() => openUrl(device.verificationUri)}>
-                Open github.com/login/device ↗
-              </button>
-              <div className="device-wait">
-                <span className="spinner" /> Waiting for authorization…
-              </div>
-            </>
-          ) : (
-            <div className="device-wait">
-              <span className="spinner" /> Starting sign-in…
-            </div>
-          )}
-          <button className="link" onClick={() => setAuthorizing(false)}>
-            Cancel
-          </button>
-        </div>
-      )}
-
-      <div className="wiz-actions">
-        <button className="ghost" onClick={onBack}>
-          Back
-        </button>
-        <button className="primary" disabled={state !== "ok"} onClick={onNext}>
-          Continue
-        </button>
-      </div>
-    </>
-  );
-}
-
 function ModelStep({ onBack, onNext }: { onBack: () => void; onNext: () => void }) {
-  const [models, setModels] = useState<string[]>([]);
   const [selected, setSelected] = useState<string>(loadModel());
-  const [loading, setLoading] = useState(true);
   const [testing, setTesting] = useState(false);
   const [result, setResult] = useState<{ ok: boolean; text: string } | null>(null);
 
-  useEffect(() => {
-    copilotModels()
-      .then((ids) => {
-        setModels(ids);
-        // Default to newest Opus unless the user already picked something valid.
-        const current = loadModel().replace(/^github-copilot\//, "");
-        const def = ids.includes(current) ? loadModel() : pickDefaultModel(ids);
-        setSelected(def);
-        saveModel(def);
-      })
-      .finally(() => setLoading(false));
-  }, []);
-
-  const choose = (full: string) => {
-    setSelected(full);
-    saveModel(full);
+  const choose = (id: string) => {
+    setSelected(id);
+    saveModel(id);
     setResult(null);
   };
 
@@ -383,7 +278,7 @@ function ModelStep({ onBack, onNext }: { onBack: () => void; onNext: () => void 
     setTesting(true);
     setResult(null);
     try {
-      const out = await testPi(selected);
+      const out = await testClaude(selected);
       const firstLine = out.split("\n").find((l) => l.trim().length > 0) || "";
       setResult({ ok: firstLine.length > 0, text: firstLine || "(no output)" });
     } catch (e) {
@@ -398,47 +293,39 @@ function ModelStep({ onBack, onNext }: { onBack: () => void; onNext: () => void 
       <Bear />
       <h1>Model & test</h1>
       <p className="wiz-lead">
-        Pick the Copilot model the agent uses. These are the models your account
-        is allowed to run.
+        Pick the Claude model the agent uses. Opus gives the best analysis; Sonnet
+        is faster and uses less of your plan limits.
       </p>
 
       <div className="wiz-form">
         <label>
           Model
-          <select
-            value={selected}
-            disabled={loading}
-            onChange={(e) => choose(e.target.value)}
-          >
-            {loading && <option>Loading…</option>}
-            {models.map((id) => {
-              const full = `github-copilot/${id}`;
-              return (
-                <option key={id} value={full}>
-                  {id}
-                </option>
-              );
-            })}
+          <select value={selected} onChange={(e) => choose(e.target.value)}>
+            {MODELS.map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.label}
+              </option>
+            ))}
           </select>
         </label>
 
-        <button className="wiz-btn" disabled={testing || loading} onClick={runTest}>
+        <button className="wiz-btn" disabled={testing} onClick={runTest}>
           {testing ? (
             <>
-              <span className="spinner" /> Testing pi agent…
+              <span className="spinner" /> Testing Claude…
             </>
           ) : (
-            "Test pi agent"
+            "Test Claude"
           )}
         </button>
 
         {result && (
           <div className={`wiz-status ${result.ok ? "ok" : "missing"}`}>
             {result.ok ? (
-              <>✓ pi agent works — replied “{result.text}”</>
+              <>✓ Claude works — replied “{result.text}”</>
             ) : (
               <>
-                <div>pi didn’t respond.</div>
+                <div>Claude didn’t respond.</div>
                 <div className="err-text">{result.text}</div>
               </>
             )}
@@ -478,7 +365,7 @@ function RepoStep({ onBack, onNext }: { onBack: () => void; onNext: () => void }
       <Bear />
       <h1>Eversports repository</h1>
       <p className="wiz-lead">
-        Pick your local checkout of the Eversports repo. The pi agent runs{" "}
+        Pick your local checkout of the Eversports repo. Claude runs{" "}
         <b>inside this folder</b> when solving a ticket, so it can read the
         codebase.
       </p>

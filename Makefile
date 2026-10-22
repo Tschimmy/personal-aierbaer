@@ -9,7 +9,7 @@ dev:
 	npm run tauri dev
 
 # Fresh onboarding test: reset the sandbox, then launch the app inside it
-# (no pi, no skill, no Copilot auth, fresh app state) via test-onboarding.sh,
+# (no claude, no skill, not signed in, fresh app state) via test-onboarding.sh,
 # which runs `npm run tauri dev` in the sandboxed env.
 fresh:
 	./test-onboarding.sh clean
@@ -24,22 +24,22 @@ deploy-local:
 	"$(LSREGISTER)" -f "/Applications/$(APP_NAME).app"
 	@echo "Installed → /Applications/$(APP_NAME).app (aierbaer:// registered)"
 
-# Ask a pi agent to suggest the next version from changes since the last release.
+# Ask a Claude Code agent to suggest the next version from changes since the last release.
 version:
 	@./scripts/suggest-version.sh
 
-# Release: pick a version, let a pi agent write the release notes from the
+# Release: pick a version, let a Claude Code agent write the release notes from the
 # changes, bump the version, commit, tag, and push. Pushing the v<x.y.z> tag
 # triggers the GitHub Actions workflow that builds the .dmg and publishes it to
 # the repo's Releases page for others to download.
-# Usage: make deploy               (default: a pi agent picks the version too)
+# Usage: make deploy               (default: a Claude Code agent picks the version too)
 #        make deploy V=0.3.0        (explicit version)
 #        make deploy BUMP=minor     (patch | minor | major from current)
 deploy:
 	@set -e; \
 	VER="$(V)"; \
 	if [ -z "$$VER" ] && [ -z "$(BUMP)" ]; then \
-	  VER=$$(./scripts/suggest-version.sh); echo "pi suggested v$$VER"; \
+	  VER=$$(./scripts/suggest-version.sh); echo "claude suggested v$$VER"; \
 	fi; \
 	if [ -z "$$VER" ]; then \
 	  CUR=$$(node -p "require('./package.json').version"); \

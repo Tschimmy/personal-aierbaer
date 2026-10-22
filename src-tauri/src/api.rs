@@ -19,11 +19,11 @@ use tauri::async_runtime::JoinHandle;
 use tauri::{AppHandle, Manager};
 use tower_http::cors::CorsLayer;
 
-use crate::{clickup, pi, reports};
+use crate::{clickup, claude, reports};
 
 pub const DEFAULT_API_PORT: u16 = 4849;
 
-/// ClickUp/pi config the API acts with. Pushed from the UI.
+/// ClickUp/claude config the API acts with. Pushed from the UI.
 #[derive(Clone, Default, Serialize, Deserialize)]
 pub struct RuntimeConfig {
     pub token: String,
@@ -304,12 +304,12 @@ async fn solve(State(st): State<ApiState>, Path(id): Path<String>) -> StatusCode
     tauri::async_runtime::spawn(async move {
         if let Ok(detail) = clickup::fetch_task_detail(&cfg.token, &id).await {
             let dir = resolve_reports_dir(&cfg);
-            let model = if cfg.model.is_empty() {
-                "github-copilot/claude-opus-4.8".to_string()
+            let model = if cfg.model.is_empty() || cfg.model.contains('/') {
+                "opus".to_string()
             } else {
                 cfg.model.clone()
             };
-            let _ = pi::run_solve(&app, &detail, &dir, &model, cfg.repo.as_deref()).await;
+            let _ = claude::run_solve(&app, &detail, &dir, &model, cfg.repo.as_deref()).await;
         }
     });
     StatusCode::ACCEPTED

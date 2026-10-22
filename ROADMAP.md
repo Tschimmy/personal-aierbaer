@@ -1,7 +1,7 @@
 # Personal Aierbaer — Roadmap
 
-Local-first Mac app (Tauri v2 + React). ClickUp ticket inbox powered by the pi
-agent running locally with each engineer's own Copilot auth. Self-feeding
+Local-first Mac app (Tauri v2 + React). ClickUp ticket inbox powered by Claude
+Code running locally with each engineer's own Claude subscription. Self-feeding
 markdown memory of solutions.
 
 ## Done
@@ -17,7 +17,7 @@ markdown memory of solutions.
 - ClickUp writeback: post comment + set status on mark-solved.
 
 ### P2 — Onboarding doctor (partly started in wizard)
-- Wizard steps: pi installed → Copilot auth → skill version → ClickUp connect.
+- Wizard steps: Claude Code installed + signed in → skill version → ClickUp connect.
 - Store ClickUp token in OS keychain (not localStorage).
 - Skill version check: compare `~/.claude/skills/clickup-solve` frontmatter
   `version:` vs bundled canonical copy; offer update/copy.
@@ -27,7 +27,7 @@ markdown memory of solutions.
 - File-per-ticket (`YYYY-MM-DD-clickup-<id>.md`) → near-zero rebase conflicts.
 - Flow: pull --rebase before analyze; on mark-solved commit + pull-rebase-push
   (3x retry loop for races). Auto-writeback decision still open.
-- pi reads whole repo → cross-team pattern detection.
+- Claude reads whole repo → cross-team pattern detection.
 
 ### P4 — Triggers + distribution
 - Deep-link OS registration (Info.plist url scheme) — v1 trigger.
@@ -37,7 +37,7 @@ markdown memory of solutions.
 
 ## Decisions locked
 - Shell: **Tauri v2** (speed/size over Electron).
-- Model: **local-first, Copilot-only** for v1 (`github-copilot/claude-opus-4.8`).
+- Model: **local-first, Claude Code subscription** (default alias `opus`; was pi + Copilot before 0.8.0).
 - Skill dir: `~/.claude/skills`.
 - v1 trigger: **deep link only** (slash command → P4).
 - UI: React + Vite. Name: **Personal Aierbaer**, id `com.aierbaer.personal`.

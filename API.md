@@ -2,7 +2,7 @@
 
 The app runs a local API on **`http://127.0.0.1:4849`** (localhost only, port
 configurable in Settings) while it's open, so an external dashboard can drive the
-same inbox, reports, and resolutions without rebuilding the ClickUp/pi
+same inbox, reports, and resolutions without rebuilding the ClickUp/Claude
 integration.
 
 The app pushes its current config (ClickUp token, team, owner, model, repo,
@@ -68,7 +68,7 @@ open "aierbaer://open/abc123"
 ```
 
 Notes:
-- `/api/solve` streams progress through the app UI (same `pi-output`/`pi-done`
+- `/api/solve` streams progress through the app UI (same `solve-progress`/`solve-done`
   events); poll `/api/report/:id` for the result.
 - Returns `400` until the app has been configured (token present).
 - Returns `401` when the `X-Aierbaer-Token` header is missing/wrong.

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Ask a pi agent to pick the next semantic version from the changes since the
+# Ask a Claude Code agent to pick the next semantic version from the changes since the
 # last release tag. Prints ONLY the version (x.y.z) to stdout.
 set -euo pipefail
 
@@ -38,11 +38,11 @@ Respond with ONLY the resulting version as x.y.z. No prose, no prefix, no quotes
 EOF
 )
 
-out=$(pi --print --model github-copilot/claude-opus-4.8 "$prompt" 2>/dev/null || true)
+out=$(claude -p --no-session-persistence --model opus "$prompt" </dev/null 2>/dev/null || true)
 ver=$(printf '%s' "$out" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
 
 if [ -z "$ver" ]; then
-  echo "could not determine version from pi output" >&2
+  echo "could not determine version from claude output" >&2
   exit 1
 fi
 echo "$ver"
