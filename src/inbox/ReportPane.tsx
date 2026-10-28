@@ -5,6 +5,47 @@ import { ask } from "@tauri-apps/plugin-dialog";
 import { readReportFor, saveResolution, deleteResolution, loadReportsDir, type ClickUpTask } from "../lib/api";
 import { Keys } from "../components/StatusBar";
 
+const esc = (t: string) => t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+/** Split SQL on `;` outside quotes/backticks; keeps the `;`. */
+function splitSql(sql: string): string[] {
+  const out: string[] = [];
+  let cur = "";
+  let q: string | null = null;
+  for (let i = 0; i < sql.length; i++) {
+    const ch = sql[i];
+    cur += ch;
+    if (q) {
+      if (ch === "\\") cur += sql[++i] ?? "";
+      else if (ch === q) q = null;
+    } else if (ch === "'" || ch === '"' || ch === "`") q = ch;
+    else if (ch === ";") {
+      out.push(cur.trim());
+      cur = "";
+    }
+  }
+  if (cur.trim()) out.push(cur.trim());
+  return out.filter(Boolean);
+}
+
+const SQL_START = /^\s*(select|insert|update|delete|with|show|describe|desc|explain|alter|create|drop)\b/i;
+
+// Every code block gets a copy button; SQL blocks split into one block per statement.
+marked.use({
+  renderer: {
+    code({ text, lang }) {
+      const isSql = /^(sql|mysql)$/i.test(lang ?? "") || (!lang && SQL_START.test(text));
+      const parts = isSql ? splitSql(text) : [text];
+      return parts
+        .map(
+          (part) =>
+            `<div class="code-block"><button class="copy-btn" type="button" data-copy>Copy</button><pre><code>${esc(part)}</code></pre></div>`,
+        )
+        .join("");
+    },
+  },
+});
+
 interface Props {
   task: ClickUpTask;
   solving: boolean;
@@ -347,7 +388,18 @@ export function ReportPane({ task, solving, onSolve, onReportsChanged, focused, 
         )}
 
         {!loading && !solving && cards && (
-          <div className="report-form">
+          <div
+            className="report-form"
+            onClick={(e) => {
+              const btn = (e.target as HTMLElement).closest("[data-copy]") as HTMLButtonElement | null;
+              if (!btn) return;
+              const code = btn.parentElement?.querySelector("code")?.textContent ?? "";
+              navigator.clipboard.writeText(code).then(() => {
+                btn.textContent = "Copied";
+                setTimeout(() => (btn.textContent = "Copy"), 1200);
+              });
+            }}
+          >
             {cards.map((c, i) => (
               <section
                 key={c.key}

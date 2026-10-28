@@ -392,6 +392,16 @@ body {
   background: var(--panel); border: 1px solid var(--line);
   padding: 12px; border-radius: 8px; overflow-x: auto;
 }
+.report-md .code-block { position: relative; margin: 8px 0; }
+.report-md .code-block pre { margin: 0; }
+.report-md .copy-btn {
+  position: absolute; top: 6px; right: 6px; z-index: 1;
+  background: var(--panel); color: var(--muted); border: 1px solid var(--line);
+  border-radius: 5px; font-size: 11px; padding: 2px 8px; cursor: pointer;
+  opacity: 0; transition: opacity 0.1s;
+}
+.report-md .code-block:hover .copy-btn { opacity: 1; }
+.report-md .copy-btn:hover { color: var(--accent); border-color: var(--accent); }
 .report-md pre code { border: none; padding: 0; background: none; }
 .report-md a { color: var(--accent); }
 .report-md strong { color: var(--text); }

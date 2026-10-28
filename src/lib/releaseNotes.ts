@@ -7,6 +7,25 @@ export interface Release {
 /** Newest first. The top entry's version is the current app version. */
 export const RELEASES: Release[] = [
   {
+    version: "0.9.0",
+    date: "2026-10-28",
+    sections: [
+      {
+        heading: "Start over on a ticket",
+        items: [
+          "New Delete report button (or press x) removes a ticket's whole report, including any saved solution, so you can solve it again from scratch — e.g. with another model.",
+          "Asks for confirmation first, and the ticket isn't auto-solved again right away — press s when you're ready.",
+        ],
+      },
+      {
+        heading: "More model choices",
+        items: [
+          "Pick Fable alongside Opus, Sonnet and Haiku, or pin a specific model version (e.g. Opus 5.5, Sonnet 4.6) in the model picker.",
+        ],
+      },
+    ],
+  },
+  {
     version: "0.8.1",
     date: "2026-10-28",
     sections: [

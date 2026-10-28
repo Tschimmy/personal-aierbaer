@@ -3,6 +3,15 @@
 All notable changes to Personal Aierbaer. Follows [Semantic Versioning](https://semver.org).
 The in-app **Settings → Release notes** mirrors this file (`src/lib/releaseNotes.ts`).
 
+## [0.9.0] — 2026-10-28
+
+### Start over on a ticket
+- New Delete report button (or press x) removes a ticket's whole report, including any saved solution, so you can solve it again from scratch — e.g. with another model.
+- Asks for confirmation first, and the ticket isn't auto-solved again right away — press s when you're ready.
+
+### More model choices
+- Pick Fable alongside Opus, Sonnet and Haiku, or pin a specific model version (e.g. Opus 5.5, Sonnet 4.6) in the model picker.
+
 ## [0.8.1] — 2026-10-28
 
 ### Maintenance
