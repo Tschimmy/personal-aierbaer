@@ -7,6 +7,18 @@ export interface Release {
 /** Newest first. The top entry's version is the current app version. */
 export const RELEASES: Release[] = [
   {
+    version: "0.8.1",
+    date: "2026-10-28",
+    sections: [
+      {
+        heading: "Maintenance",
+        items: [
+          "Behind-the-scenes fix to how release notes are generated, so this list stays complete for future updates. No changes to how the app works.",
+        ],
+      },
+    ],
+  },
+  {
     version: "0.8.0",
     date: "2026-10-22",
     sections: [

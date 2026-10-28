@@ -6,6 +6,11 @@ import {
   fetchOwnerOptions,
   loadRepo,
   saveRepo,
+  loadModel,
+  saveModel,
+  MODELS,
+  currentRuntimeConfig,
+  setRuntimeConfig,
   loadReportsDir,
   saveReportsDir,
   checkSkill,
@@ -38,10 +43,11 @@ interface Props {
   onCancel?: () => void;
 }
 
-type Section = "clickup" | "solving" | "skill" | "api" | "notifications" | "startup" | "about" | "aboutme";
+type Section = "clickup" | "model" | "solving" | "skill" | "api" | "notifications" | "startup" | "about" | "aboutme";
 
 const SECTIONS: { id: Section; label: string }[] = [
   { id: "clickup", label: "ClickUp" },
+  { id: "model", label: "Model" },
   { id: "solving", label: "Repository & Reports" },
   { id: "skill", label: "Skills" },
   { id: "notifications", label: "Notifications" },
@@ -62,6 +68,7 @@ export function Settings({ initial, onSave, onCancel }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [repo, setRepo] = useState<string>(loadRepo());
+  const [model, setModel] = useState<string>(loadModel());
   const [reportsDir, setReportsDir] = useState<string>(loadReportsDir());
   const [skill, setSkill] = useState<SkillStatus | null>(null);
   const [skillBusy, setSkillBusy] = useState(false);
@@ -123,6 +130,12 @@ export function Settings({ initial, onSave, onCancel }: Props) {
   const chooseRepo = async () => {
     const p = await openDialog({ directory: true, multiple: false, title: "Select the Eversports repository" });
     if (typeof p === "string") { setRepo(p); saveRepo(p); }
+  };
+  const chooseModel = (id: string) => {
+    setModel(id);
+    saveModel(id);
+    const rc = currentRuntimeConfig();
+    if (rc) setRuntimeConfig(rc).catch(() => {});
   };
   const chooseReports = async () => {
     const p = await openDialog({ directory: true, multiple: false, title: "Where to store solution reports" });
@@ -244,6 +257,21 @@ export function Settings({ initial, onSave, onCancel }: Props) {
                     {loading ? "Refreshing…" : "↻ Refresh teams from ClickUp"}
                   </button>
                 )}
+              </>
+            )}
+
+            {section === "model" && (
+              <>
+                <h2>Model</h2>
+                <p className="prefs-lead">Claude model used when solving tickets.</p>
+                <label>
+                  Model
+                  <select value={model} onChange={(e) => chooseModel(e.target.value)}>
+                    {MODELS.map((m) => (
+                      <option key={m.id} value={m.id}>{m.label}</option>
+                    ))}
+                  </select>
+                </label>
               </>
             )}
 

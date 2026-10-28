@@ -284,9 +284,10 @@ export function testClaude(model: string): Promise<string> {
   return invoke("test_claude", { model });
 }
 
-/** Claude Code model aliases; the CLI resolves each to the newest model. */
+/** Claude Code model aliases (CLI resolves to newest) plus pinned model ids. */
 export const MODELS = [
   { id: "opus", label: "Opus — most capable" },
+  { id: "claude-opus-5-5", label: "Opus 5.5 (pinned)" },
   { id: "sonnet", label: "Sonnet — faster" },
   { id: "haiku", label: "Haiku — fastest" },
 ];

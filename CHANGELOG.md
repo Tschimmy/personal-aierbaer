@@ -3,6 +3,11 @@
 All notable changes to Personal Aierbaer. Follows [Semantic Versioning](https://semver.org).
 The in-app **Settings → Release notes** mirrors this file (`src/lib/releaseNotes.ts`).
 
+## [0.8.1] — 2026-10-28
+
+### Maintenance
+- Behind-the-scenes fix to how release notes are generated, so this list stays complete for future updates. No changes to how the app works.
+
 ## [0.8.0] — 2026-10-22
 
 ### Now powered by Claude Code
