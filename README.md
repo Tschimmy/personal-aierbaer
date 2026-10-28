@@ -69,6 +69,7 @@ skills → model + test → repository → ClickUp.
 | `s` | solve / re-solve |
 | `r` | set the resolution |
 | `d` | delete the resolution |
+| `x` | delete the whole report (start over) |
 | `⌘C` | copy the selected ticket ID |
 | `⌘F` | search · `⌘U` hide resolved · `⌘R` refresh · `⌘,` settings |
 

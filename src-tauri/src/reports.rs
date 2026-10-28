@@ -105,6 +105,18 @@ pub async fn list_meta(dir: &Path) -> Vec<ReportMeta> {
     out
 }
 
+/// Delete every report file for a task id (solution + resolution), so it can be solved fresh.
+pub async fn remove_reports(dir: &Path, task_id: &str) -> std::io::Result<()> {
+    let mut rd = tokio::fs::read_dir(dir).await?;
+    while let Some(e) = rd.next_entry().await? {
+        let name = e.file_name().to_string_lossy().to_string();
+        if matches!(parse(&name), Some((_, id)) if id == task_id) {
+            tokio::fs::remove_file(e.path()).await?;
+        }
+    }
+    Ok(())
+}
+
 /// Remove the `## Resolution` section from a report file (if present).
 pub async fn remove_resolution(path: &Path) -> std::io::Result<()> {
     let content = tokio::fs::read_to_string(path).await?;

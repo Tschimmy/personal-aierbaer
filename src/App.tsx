@@ -9,6 +9,7 @@ import {
   loadRepo,
   loadReportsDir,
   setRuntimeConfig,
+  deleteReport,
   currentRuntimeConfig,
   listReportsMeta,
   checkSkill,
@@ -118,6 +119,13 @@ export function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tasks, reportIds, reportsLoaded, cfg]);
 
+  // Wipe a ticket's report; mark attempted so auto-solve doesn't immediately redo it.
+  const handleDeleteReport = async (taskId: string) => {
+    await deleteReport(taskId, loadReportsDir());
+    attempted.current.add(taskId);
+    await refreshReportIds();
+  };
+
   // Notify on newly-arrived tickets (seeds silently on first run).
   useEffect(() => {
     if (!cfg) return;
@@ -211,6 +219,7 @@ export function App() {
       onRefresh={refresh}
       onSolve={handleSolve}
       onReportsChanged={refreshReportIds}
+      onDeleteReport={handleDeleteReport}
       onSettings={() => setShowSettings(true)}
     />
   );

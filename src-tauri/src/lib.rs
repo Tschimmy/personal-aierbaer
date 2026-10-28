@@ -130,6 +130,17 @@ async fn delete_resolution(
     reports::remove_resolution(&path).await.map_err(|e| e.to_string())
 }
 
+/// Delete a task's report file(s) entirely so the ticket can be re-solved from scratch.
+#[tauri::command]
+async fn delete_report(
+    app: AppHandle,
+    task_id: String,
+    reports_dir: Option<String>,
+) -> Result<(), String> {
+    let dir = resolve_reports_dir(&app, reports_dir);
+    reports::remove_reports(&dir, &task_id).await.map_err(|e| e.to_string())
+}
+
 /// Read a report markdown file (for the report view).
 #[tauri::command]
 async fn read_report(path: String) -> Result<String, String> {
@@ -306,6 +317,7 @@ pub fn run() {
             list_reports_meta,
             save_resolution,
             delete_resolution,
+            delete_report,
             check_update,
             install_update,
             restart_app

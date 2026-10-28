@@ -85,6 +85,11 @@ export function deleteResolution(taskId: string, reportsDir?: string): Promise<v
   return invoke("delete_resolution", { taskId, reportsDir });
 }
 
+/** Delete a task's report file(s) entirely (solution + resolution). */
+export function deleteReport(taskId: string, reportsDir?: string): Promise<void> {
+  return invoke("delete_report", { taskId, reportsDir });
+}
+
 export function loadReportsDir(): string {
   return localStorage.getItem("aierbaer.reportsDir") || "";
 }
@@ -284,12 +289,24 @@ export function testClaude(model: string): Promise<string> {
   return invoke("test_claude", { model });
 }
 
-/** Claude Code model aliases (CLI resolves to newest) plus pinned model ids. */
+/** Claude Code model aliases (CLI resolves to newest) plus pinned ids, as in `/model`. */
 export const MODELS = [
-  { id: "opus", label: "Opus — most capable" },
-  { id: "claude-opus-5-5", label: "Opus 5.5 (pinned)" },
-  { id: "sonnet", label: "Sonnet — faster" },
-  { id: "haiku", label: "Haiku — fastest" },
+  { id: "opus", label: "Opus — latest, most capable" },
+  { id: "sonnet", label: "Sonnet — latest, faster" },
+  { id: "haiku", label: "Haiku — latest, fastest" },
+  { id: "fable", label: "Fable — latest, toughest tasks" },
+  { id: "claude-opus-5-5", label: "Opus 5.5" },
+  { id: "claude-fable-5-1", label: "Fable 5.1" },
+  { id: "claude-sonnet-5-5", label: "Sonnet 5.5" },
+  { id: "claude-haiku-5-5", label: "Haiku 5.5" },
+  { id: "claude-haiku-4-5", label: "Haiku 4.5" },
+  { id: "claude-sonnet-5", label: "Sonnet 5" },
+  { id: "claude-opus-5", label: "Opus 5" },
+  { id: "claude-fable-5", label: "Fable 5" },
+  { id: "claude-opus-4-8", label: "Opus 4.8" },
+  { id: "claude-opus-4-7", label: "Opus 4.7" },
+  { id: "claude-opus-4-6", label: "Opus 4.6" },
+  { id: "claude-sonnet-4-6", label: "Sonnet 4.6" },
 ];
 
 export const DEFAULT_MODEL = "opus";

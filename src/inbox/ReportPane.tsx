@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { listen } from "@tauri-apps/api/event";
 import { marked } from "marked";
+import { ask } from "@tauri-apps/plugin-dialog";
 import { readReportFor, saveResolution, deleteResolution, loadReportsDir, type ClickUpTask } from "../lib/api";
 import { Keys } from "../components/StatusBar";
 
@@ -12,6 +13,8 @@ interface Props {
   focused?: boolean;
   resolveSignal?: number;
   deleteSignal?: number;
+  onDeleteReport: (taskId: string) => Promise<void>;
+  deleteReportSignal?: number;
 }
 
 interface Card {
@@ -53,7 +56,7 @@ function parseReport(md: string): Card[] {
 
 /** Bottom split pane: the generated solution report rendered as a form of
  *  section cards. When focused, j/k jump between sections. */
-export function ReportPane({ task, solving, onSolve, onReportsChanged, focused, resolveSignal, deleteSignal }: Props) {
+export function ReportPane({ task, solving, onSolve, onReportsChanged, focused, resolveSignal, deleteSignal, onDeleteReport, deleteReportSignal }: Props) {
   const [cards, setCards] = useState<Card[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [active, setActive] = useState(0);
@@ -183,6 +186,23 @@ export function ReportPane({ task, solving, onSolve, onReportsChanged, focused, 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [deleteSignal]);
 
+  // Wipe the whole report (solution + resolution) to start over, e.g. with another model.
+  const deleteReport = async () => {
+    const ok = await ask("Delete this report and its solution? You can then solve the ticket again from scratch.", {
+      title: "Delete report",
+      kind: "warning",
+    });
+    if (!ok) return;
+    await onDeleteReport(task.id);
+    await load();
+  };
+
+  // Trigger from the inbox (x on a ticket with a report).
+  useEffect(() => {
+    if (deleteReportSignal && cards) deleteReport();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [deleteReportSignal]);
+
   // Resolution form keys: 1/2/3 pick option (3 = Other → into textbox),
   // ⌘↵ save, esc blur textbox / cancel.
   useEffect(() => {
@@ -249,6 +269,11 @@ export function ReportPane({ task, solving, onSolve, onReportsChanged, focused, 
           {existingRes && (
             <button className="open danger" onClick={deleteRes} title="Delete solution (d)">
               Remove solution
+            </button>
+          )}
+          {cards && (
+            <button className="open danger" onClick={deleteReport} disabled={solving} title="Delete report (x)">
+              Delete report
             </button>
           )}
           <a href={task.url} target="_blank" rel="noreferrer" className="open">

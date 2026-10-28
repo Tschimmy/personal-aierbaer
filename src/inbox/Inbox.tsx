@@ -41,6 +41,7 @@ interface Props {
   onRefresh: () => void;
   onSolve: (taskId: string) => void;
   onReportsChanged: () => void;
+  onDeleteReport: (taskId: string) => Promise<void>;
   onSettings: () => void;
 }
 
@@ -55,6 +56,7 @@ export function Inbox({
   onRefresh,
   onSolve,
   onReportsChanged,
+  onDeleteReport,
   onSettings,
 }: Props) {
   const [theme, setTheme] = useState(loadTheme());
@@ -114,6 +116,7 @@ export function Inbox({
   const dragging = useRef(false);
   const [resolveSignal, setResolveSignal] = useState(0);
   const [deleteSignal, setDeleteSignal] = useState(0);
+  const [deleteReportSignal, setDeleteReportSignal] = useState(0);
 
   const toggleTheme = () => {
     const next = theme === "dark" ? "light" : "dark";
@@ -169,6 +172,7 @@ export function Inbox({
       if (canSolve) h.push({ keys: ["s"], label: "re-solve" });
       h.push({ keys: ["r"], label: "set solution" });
       if (selected && resolvedMap.has(selected.id)) h.push({ keys: ["d"], label: "delete solution" });
+      if (canSolve && hasReport.has(selected!.id)) h.push({ keys: ["x"], label: "delete report" });
       h.push({ keys: ["?"], label: "help" }, { keys: ["⌘", "R"], label: "refresh" }, { keys: ["⌘", ","], label: "settings" });
       return h;
     }
@@ -178,6 +182,7 @@ export function Inbox({
     if (selected) h.push({ keys: ["↵"], label: "open report" });
     if (selected && hasReport.has(selected.id)) h.push({ keys: ["r"], label: "set solution" });
     if (selected && resolvedMap.has(selected.id)) h.push({ keys: ["d"], label: "delete solution" });
+    if (canSolve && hasReport.has(selected!.id)) h.push({ keys: ["x"], label: "delete report" });
     if (selected) h.push({ keys: ["⌘", "C"], label: "copy id" });
     h.push(
       { keys: ["⌘", "F"], label: "search" },
@@ -262,6 +267,15 @@ export function Inbox({
         if (cur && !s[cur]) {
           e.preventDefault();
           onSolve(cur);
+        }
+        return;
+      }
+      // 'x' deletes the whole report so the ticket can be solved fresh.
+      if (e.key === "x" || e.key === "X") {
+        const { selectedId: cur, solving: s, reportIds: ids } = nav.current;
+        if (cur && !s[cur] && ids.includes(cur)) {
+          e.preventDefault();
+          setDeleteReportSignal((n) => n + 1);
         }
         return;
       }
@@ -486,6 +500,8 @@ export function Inbox({
               focused={focusReport}
               resolveSignal={resolveSignal}
               deleteSignal={deleteSignal}
+              onDeleteReport={onDeleteReport}
+              deleteReportSignal={deleteReportSignal}
             />
           </>
         )}

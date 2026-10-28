@@ -56,7 +56,7 @@ export function Help({ onClose }: { onClose: () => void }) {
             <ul>
               <li>New tickets <b>auto-solve</b> — a report appears without you clicking.</li>
               <li>Click a ticket (or <kbd>j</kbd>/<kbd>k</kbd>) to see its report below.</li>
-              <li><kbd>s</kbd> re-solve, <kbd>r</kbd> set the real solution, <kbd>d</kbd> remove it.</li>
+              <li><kbd>s</kbd> re-solve, <kbd>r</kbd> set the real solution, <kbd>d</kbd> remove it, <kbd>x</kbd> delete the whole report.</li>
               <li>Resolved tickets turn green with the chosen option; <kbd>⌘</kbd><kbd>U</kbd> hides them.</li>
               <li><kbd>⌘</kbd><kbd>C</kbd> copies the selected ticket's ID (handy for the steps below).</li>
             </ul>
