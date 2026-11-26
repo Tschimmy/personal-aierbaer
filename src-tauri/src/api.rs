@@ -243,24 +243,8 @@ async fn get_resolution(State(st): State<ApiState>, Path(id): Path<String>) -> A
         return Ok(Json(json!({ "taskId": id, "resolved": false })));
     };
     let md = tokio::fs::read_to_string(&p).await.map_err(err)?;
-    let (resolved, choice, notes) = parse_resolution(&md);
+    let (resolved, choice, notes) = reports::parse_resolution(&md);
     Ok(Json(json!({ "taskId": id, "resolved": resolved, "choice": choice, "notes": notes })))
-}
-
-fn parse_resolution(md: &str) -> (bool, Option<String>, Option<String>) {
-    let Some(i) = md.find("\n## Resolution") else {
-        return (false, None, None);
-    };
-    let sec = &md[i..];
-    let choice = sec
-        .lines()
-        .find_map(|l| l.trim().strip_prefix("**Chosen:**").map(|s| s.trim().to_string()));
-    let notes = sec
-        .split_once("**Resolved:**")
-        .and_then(|(_, rest)| rest.split_once('\n'))
-        .map(|(_, body)| body.trim().to_string())
-        .filter(|s| !s.is_empty());
-    (true, choice, notes)
 }
 
 #[derive(Deserialize)]
