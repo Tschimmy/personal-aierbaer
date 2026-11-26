@@ -1,0 +1,40 @@
+{
+	"$schema": "https://biomejs.dev/schemas/2.6.9/schema.json",
+	"vcs": {
+		"enabled": true,
+		"clientKind": "git",
+		"useIgnoreFile": true
+	},
+	"files": {
+		"includes": [
+			"src/**",
+			"*.ts",
+			"*.json",
+			"!package-lock.json"
+		]
+	},
+	"formatter": {
+		"enabled": false
+	},
+	"linter": {
+		"enabled": true,
+		"rules": {
+			"preset": "recommended",
+			"a11y": {
+				"useButtonType": "warn",
+				"useKeyWithClickEvents": "warn",
+				"noStaticElementInteractions": "warn",
+				"noLabelWithoutControl": "warn"
+			},
+			"style": {
+				"noDescendingSpecificity": "warn"
+			},
+			"complexity": {
+				"noImportantStyles": "warn"
+			}
+		}
+	},
+	"assist": {
+		"enabled": false
+	}
+}

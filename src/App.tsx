@@ -132,7 +132,9 @@ export function App() {
     const known = loadKnownTickets();
     const ids = tasks.map((t) => t.id);
     if (known && loadNotifyTickets()) {
-      tasks.filter((t) => !known.includes(t.id)).forEach((t) => notify("New ticket", t.name));
+      tasks.filter((t) => !known.includes(t.id)).forEach((t) => {
+        notify("New ticket", t.name);
+      });
     }
     if (tasks.length || known) saveKnownTickets(ids);
     // eslint-disable-next-line react-hooks/exhaustive-deps
