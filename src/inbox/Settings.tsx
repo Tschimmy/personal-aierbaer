@@ -316,10 +316,10 @@ export function Settings({ initial, onSave, onCancel }: Props) {
                     read reports, set resolutions, or trigger a solve on your behalf.
                   </li>
                 </ul>
-                {skill && skill.installed && skill.up_to_date && (
+                {skill?.installed && skill.up_to_date && (
                   <div className="wiz-status ok">✓ Up to date — v{skill.version}</div>
                 )}
-                {skill && skill.installed && !skill.up_to_date && (
+                {skill?.installed && !skill.up_to_date && (
                   <div className="wiz-status missing">
                     <div>Update available — installed v{skill.version ?? "?"}, bundled v{skill.bundled ?? "?"}.</div>
                     <button className="fix" disabled={skillBusy} onClick={updateSkill}>{skillBusy ? "Updating…" : "Update"}</button>
