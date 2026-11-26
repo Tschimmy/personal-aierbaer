@@ -17,6 +17,11 @@ fn parse(name: &str) -> Option<(String, String)> {
     Some((date.to_string(), id.to_string()))
 }
 
+/// Path of the report file for a task solved on `date` (`YYYY-MM-DD`).
+pub fn report_path(dir: &Path, date: &str, task_id: &str) -> PathBuf {
+    dir.join(format!("{date}-clickup-{task_id}.md"))
+}
+
 /// Newest report file for a task id, if any.
 pub async fn find_report(dir: &Path, task_id: &str) -> Option<PathBuf> {
     let mut rd = tokio::fs::read_dir(dir).await.ok()?;
@@ -115,6 +120,23 @@ pub async fn remove_reports(dir: &Path, task_id: &str) -> std::io::Result<()> {
         }
     }
     Ok(())
+}
+
+/// Parse the `## Resolution` section of a report: (resolved, chosen option, notes).
+pub fn parse_resolution(md: &str) -> (bool, Option<String>, Option<String>) {
+    let Some(i) = md.find("\n## Resolution") else {
+        return (false, None, None);
+    };
+    let sec = &md[i..];
+    let choice = sec
+        .lines()
+        .find_map(|l| l.trim().strip_prefix("**Chosen:**").map(|s| s.trim().to_string()));
+    let notes = sec
+        .split_once("**Resolved:**")
+        .and_then(|(_, rest)| rest.split_once('\n'))
+        .map(|(_, body)| body.trim().to_string())
+        .filter(|s| !s.is_empty());
+    (true, choice, notes)
 }
 
 /// Remove the `## Resolution` section from a report file (if present).

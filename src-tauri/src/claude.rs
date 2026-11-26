@@ -218,7 +218,7 @@ pub async fn run_solve(
     tokio::fs::write(&context_path, render_context(detail)).await?;
 
     let date = chrono::Local::now().format("%Y-%m-%d").to_string();
-    let report_path = reports_dir.join(format!("{date}-clickup-{}.md", detail.id));
+    let report_path = crate::reports::report_path(reports_dir, &date, &detail.id);
 
     let prompt = format!(
         "Use the clickup-aierbaer-solve skill. Analyze the ClickUp task described in the context file \
